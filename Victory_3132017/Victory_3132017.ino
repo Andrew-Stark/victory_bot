@@ -88,7 +88,7 @@ void setup()
   Serial.begin(9600);
   // put your setup code here, to run once:
 byte allOutputs = B11111111;
-
+matrix.begin(0x70);
 DDRL = allOutputs;
 
 //************** test
@@ -98,51 +98,6 @@ DDRL = allOutputs;
 x = 1;
 y = 1;
 
-
-
-while ((x < 5) || (y < 5))
-  {
-    if ( (y % 2) != 0 && x < 5)
-        {
-          ForwardBackward(12,1,period);
-          x++;
-          //check obstacle
-          //check tick tracer / dead end
-          //display result
-          markHere(x,y);
-        }
-    else if ( (y % 2) == 0 && x > 1)
-    {
-      ForwardBackward(12,1,period);
-      x--;
-                //check obstacle
-          //check tick tracer / dead end
-          //display result
-          markHere(x,y);
-    }
-    else if (x == 5 && y%2 != 0)
-      {
-        turn(90,1,period);
-        ForwardBackward(12,1,period);
-        turn(90,1,period);
-        y++;
-          //check obstacle
-          //check tick tracer / dead end
-          //display result
-          markHere(x,y);
-      }
-    else if (x == 1 && y%2==0)
-      {
-      turn(90,0,period);
-      ForwardBackward(12,1,period);
-      turn(90,0,period);
-      y++;
-      //check obstacle
-      //check tick tracer / dead end
-      //display result
-      markHere(x,y);
-      }  
-}
 
 
 //*****test section
@@ -206,8 +161,69 @@ void loop()
 
 }
 
+void gridSearch()
+{
+matrix.clear();  
+ForwardBackward(12,1,period);
+turn(90,1,period);
+ForwardBackward(12,1,period);
+turn(90,0,period);
+checkEmAll();
+markHere(x,y);
+while ((x < 5) || (y < 5))
+  {
+    if ( (y % 2) != 0 && x < 5)
+        {
+          ForwardBackward(12,1,period);
+          x++;
+          //check obstacle
+          //check tick tracer / dead end
+          //display result
+          markHere(x,y);
+        }
+    else if ( (y % 2) == 0 && x > 1)
+    {
+      ForwardBackward(12,1,period);
+      x--;
+                //check obstacle
+          //check tick tracer / dead end
+          //display result
+          markHere(x,y);
+    }
+    else if (x == 5 && y%2 != 0)
+      {
+        turn(90,1,period);
+        ForwardBackward(12,1,period);
+        turn(90,1,period);
+        checkEmAll();
+        y++;
+          //check obstacle
+          //check tick tracer / dead end
+          //display result
+          markHere(x,y);
+      }
+    else if (x == 1 && y%2==0)
+      {
+      turn(90,0,period);
+      ForwardBackward(12,1,period);
+      turn(90,0,period);
+      checkEmAll();
+      y++;
+      //check obstacle
+      //check tick tracer / dead end
+      //display result
+      markHere(x,y);
+      }  
+   }
+}
 
-
+void checkEmAll()
+{
+  AngleLeft();
+  AngleRight();
+  AngleBack();
+  AngleFront();
+}
 //****************** align to wall
 
  
@@ -540,8 +556,8 @@ void displayLED(){
   }//end of first for
 }
 void markHere(int i, int j){
-  i += 1;
-  j += 1;
+  //i += 1;
+  //j += 1;
   matrix.drawPixel(i,j, LED_RED);
   matrix.writeDisplay();
 }//end of marking the wire
