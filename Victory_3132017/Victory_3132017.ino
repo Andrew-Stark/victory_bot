@@ -27,7 +27,7 @@ byte motionLeftWheels = B01000100;// LEFT WHEELS
 //%%%%%%%%%%%% CONVERSION FACTORS %%%%%%%%%%%%%%%%%%%%%%
 int Steps;
 float steps_per_inch = 217.6;
-float steps_per_degree = 25.4;
+float steps_per_degree = 24;
 byte motion = B01010101;
 float dist_wall;
 int period = 1000;
@@ -100,26 +100,47 @@ x = 1;
 y = 1;
 
 
-/*
+
 while ((x < 5) || (y < 5))
   {
     if ( (y % 2) != 0 && x < 5)
         {
-          ForwardBackward(12,1,1600);
+          ForwardBackward(12,1,period);
           x++;
+          //check obstacle
+          //check tick tracer / dead end
+          //display result
         }
     else if ( (y % 2) == 0 && x > 1)
     {
-      ForwardBackward(12,0,1600);
+      ForwardBackward(12,1,period);
       x--;
+                //check obstacle
+          //check tick tracer / dead end
+          //display result
     }
-    else if ((x == 5 && y%2 != 0) || (x == 1 && y%2==0))
+    else if (x == 5 && y%2 != 0)
       {
-        strafe(12,1,1600);
+        turn(90,1,period);
+        ForwardBackward(12,1,period);
+        turn(90,1,period);
         y++;
+          //check obstacle
+          //check tick tracer / dead end
+          //display result
       }
-  }
- */
+    else if (x == 1 && y%2==0)
+      {
+      turn(90,0,period);
+      ForwardBackward(12,1,period);
+      turn(90,0,period);
+      y++;
+      //check obstacle
+      //check tick tracer / dead end
+      //display result
+      }  
+}
+
 
 //*****test section
 
