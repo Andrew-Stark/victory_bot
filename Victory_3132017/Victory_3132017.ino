@@ -98,6 +98,7 @@ DDRL = allOutputs;
 x = 1;
 y = 1;
 
+gridSearch();
 
 
 //*****test section
