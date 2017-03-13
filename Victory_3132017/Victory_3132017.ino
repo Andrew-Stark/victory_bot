@@ -85,8 +85,7 @@ Adafruit_BicolorMatrix matrix = Adafruit_BicolorMatrix();
 //**************************************************SETUP
 void setup() 
 {
-  Serial.begin(115200);  //Open serial monitor at 115200 baud
-  
+  Serial.begin(9600);
   // put your setup code here, to run once:
 byte allOutputs = B11111111;
 
@@ -110,6 +109,7 @@ while ((x < 5) || (y < 5))
           //check obstacle
           //check tick tracer / dead end
           //display result
+          markHere(x,y);
         }
     else if ( (y % 2) == 0 && x > 1)
     {
@@ -118,6 +118,7 @@ while ((x < 5) || (y < 5))
                 //check obstacle
           //check tick tracer / dead end
           //display result
+          markHere(x,y);
     }
     else if (x == 5 && y%2 != 0)
       {
@@ -128,6 +129,7 @@ while ((x < 5) || (y < 5))
           //check obstacle
           //check tick tracer / dead end
           //display result
+          markHere(x,y);
       }
     else if (x == 1 && y%2==0)
       {
@@ -138,6 +140,7 @@ while ((x < 5) || (y < 5))
       //check obstacle
       //check tick tracer / dead end
       //display result
+      markHere(x,y);
       }  
 }
 
@@ -146,7 +149,7 @@ while ((x < 5) || (y < 5))
 
   
 //********************basic motion functions
-ForwardBackward (12,0,period);  //ok, distance calibrated. 12 inches= 110 steps (distance in inches, 1 fwd, 0 bwd, delay)
+//ForwardBackward (12,0,period);  //ok, distance calibrated. 12 inches= 110 steps (distance in inches, 1 fwd, 0 bwd, delay)
 //strafe(12,1,50);            // (distance, right/left, delay
  //turn(180,1,100);
 //advanced motion
@@ -536,8 +539,10 @@ void displayLED(){
     }//end of second for
   }//end of first for
 }
-void markHere(int x, int y){
-  matrix.drawPixel(x,y, LED_RED);
+void markHere(int i, int j){
+  i += 1;
+  j += 1;
+  matrix.drawPixel(i,j, LED_RED);
   matrix.writeDisplay();
 }//end of marking the wire
 
