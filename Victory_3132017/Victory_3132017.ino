@@ -41,10 +41,10 @@ int period = 1000;
   #define ECHO_SensorLF 35        // ?
   #define TRIGGER_SensorLB 30     // ?
   #define ECHO_SensorLB 31        // ?
-  #define TRIGGER_SensorRB 22     // ?
-  #define ECHO_SensorRB 23        // ?
-  #define TRIGGER_SensorRF 26     // ok
-  #define ECHO_SensorRF 27        // ok
+  #define TRIGGER_SensorRB 26     // ?
+  #define ECHO_SensorRB 27        // ?
+  #define TRIGGER_SensorRF 22     // ok
+  #define ECHO_SensorRF 23        // ok
 
 // fore and aft  
 
@@ -69,8 +69,24 @@ int period = 1000;
   NewPing sonarRF(TRIGGER_SensorRB, ECHO_SensorRB,Max_Distance);
   NewPing sonarRB(TRIGGER_SensorRF, ECHO_SensorRF,Max_Distance);
 
-  float micro_to_inches = .006756;
- 
+  float micro_to_inches = 0.006756;
+  float pi = 3.14159265;
+  float sideWidth = 7.0675/micro_to_inches;
+  float frontWidth = 6.75/micro_to_inches;
+  
+  float distanceXY;
+  
+  float oneFoot = 12/micro_to_inches;
+  float Ycentered = 0.75/micro_to_inches;
+  float Xcentered = 1.25/micro_to_inches;
+  
+  
+  int sanityBoard[5][5]{{0,0,0,0,0},
+                        {0,0,0,0,0},
+                        {0,0,0,0,0},
+                        {0,0,0,0,0},
+                        {0,0,0,0,0}};
+   
 //************************************************* LED MATRIX  
 int x;
 int y;
@@ -81,19 +97,16 @@ int board[7][7]= {{0,0,0,0,0,0,0},
                   {0,0,0,0,0,0,0},
                   {0,0,0,0,0,0,0},
                   {0,0,0,0,0,0,0}};
+                  
+  
 Adafruit_BicolorMatrix matrix = Adafruit_BicolorMatrix();
 //**************************************************SETUP
 void setup() 
 {
   Serial.begin(9600);
-  // put your setup code here, to run once:
-byte allOutputs = B11111111;
-matrix.begin(0x70);
-DDRL = allOutputs;
-
-//************** test
-
-//*************** search pattern
+  byte allOutputs = B11111111;
+  matrix.begin(0x70);
+  DDRL = allOutputs;
 
 x = 1;
 y = 1;
@@ -158,8 +171,31 @@ gridSearch();
 
 void loop() 
 {
+//Serial.print("Left Front = ");
+//Serial.println(sonarLF.ping_median(5));
+//
+//Serial.print(" Left Back = ");
+//Serial.println(sonarLB.ping_median(5));
 
+//Serial.print(" Right Front = ");
+//Serial.println(sonarRF.ping_median(5));
+//
+//Serial.print(" Right Back = ");
+//Serial.println(sonarRB.ping_median(5));
+//
+//Serial.print(" Front Left = ");
+//Serial.println(sonarFL.ping_median(5));
+//
+//Serial.print(" Front Right = ");
+//Serial.println(sonarFR.ping_median(5));
+//
+//Serial.print(" Back Left = ");
+//Serial.println(sonarBL.ping_median(5));
+//
+//Serial.print(" Back Right = ");
+//Serial.println(sonarBR.ping_median(5));
 
+//checkEmAll();
 }
 
 void gridSearch()
@@ -184,7 +220,7 @@ while ((x < 5) || (y < 5))
         }
     else if ( (y % 2) == 0 && x > 1)
     {
-      ForwardBackward(12,1,period);
+      ForwardBackward(12,0,period);
       x--;
                 //check obstacle
           //check tick tracer / dead end
@@ -195,7 +231,7 @@ while ((x < 5) || (y < 5))
       {
         turn(90,1,period);
         ForwardBackward(12,1,period);
-        turn(90,1,period);
+        turn(90,0,period);
         checkEmAll();
         y++;
           //check obstacle
@@ -207,7 +243,7 @@ while ((x < 5) || (y < 5))
       {
       turn(90,0,period);
       ForwardBackward(12,1,period);
-      turn(90,0,period);
+      turn(90,1,period);
       checkEmAll();
       y++;
       //check obstacle
@@ -220,198 +256,129 @@ while ((x < 5) || (y < 5))
 
 void checkEmAll()
 {
-  AngleLeft();
-  AngleRight();
-  AngleBack();
-  AngleFront();
+  float angleFront = angleMeas(sonarFL, sonarFR, frontWidth);
+  float frontDistance = distanceXY;
+  float angleLeft = angleMeas(sonarLB, sonarLF, sideWidth);
+  float leftDistance = distanceXY;
+  float angleBack = angleMeas(sonarBR, sonarBL, frontWidth);
+  float backDistance = distanceXY;
+  float angleRight = angleMeas(sonarRF, sonarRB, sideWidth);
+  float rightDistance = distanceXY;
+  float minMag;
+  
+  float frontOffset = (frontDistance+Ycentered)/oneFoot;
+  float backOffset = (backDistance+Ycentered)/oneFoot;
+  float leftOffset = (leftDistance+Xcentered)/oneFoot;
+  float rightOffset = (rightDistance+Xcentered)/oneFoot;
+  
+  int goodAngleCount = 0;
+  
+  Serial.print("front ");
+  Serial.println(angleFront);
+  Serial.print("left ");
+  Serial.println(angleLeft);
+  Serial.print("back ");
+  Serial.println(angleBack);
+  Serial.print("right ");
+  Serial.println(angleRight);
+  
+  Serial.print("FRONT ");
+  Serial.println(frontOffset);
+  Serial.print("LEFT ");
+  Serial.println(leftOffset);
+  Serial.print("BACK ");
+  Serial.println(backOffset);
+  Serial.print("RIGHT ");
+  Serial.println(rightOffset);
+  
+  if (angleFront == 100)
+    angleFront = angleBack;
+  if (angleBack == 100)
+    angleBack = angleFront;
+  if (angleRight == 100)
+    angleRight = angleLeft;
+  if (angleLeft == 100)
+    angleLeft = angleRight;
+  
+//  minMag += angleFront;
+//  minMag += angleRight;
+//  minMag += angleLeft;
+//  minMag += angleBack;
+//  
+//  minMag /= 4;
+  
+  if(angleFront != angleFront)
+  {
+    minMag = 45; 
+  }
+  else
+  {
+    minMag = abs(angleFront);
+    
+  }
+  
+  if ((abs(minMag) > abs(angleLeft)) && !(angleLeft != angleLeft))
+  {
+    minMag = abs(angleLeft);
+  }
+  else if ((abs(minMag) > abs(angleBack)) && !(angleBack != angleBack))
+  {
+    minMag = abs(angleBack);
+  }
+  else if ((abs(minMag) > abs(angleRight)) && !(angleRight != angleRight))
+  {
+    minMag = abs(angleRight);
+  }
+  
+  if (minMag == 45)
+  {
+    minMag = abs(angleRight);
+  }
+  
+  if (minMag>2)
+  {
+    turn(minMag, 1, period);
+  }
+  else if (minMag < -2)
+  {
+    turn(minMag, 0, period);
+  }
+
+  Serial.print("minMag ");
+  Serial.println(minMag);
+  Serial.print("\n\n");
+
+
 }
+
 //****************** align to wall
 
+//**********************************************************Calculate angle
+// firts sensor is MOST COUNTERCLOCKWISE
+float angleMeas(NewPing sens1, NewPing sens2, float sensWidth)//sensWidth front  = 6.75, sensWidth sides = 7.0625
+{
+  int N = 5;
+  float threshSanity;
+  float dist1;
+  float dist2;
+  float a;
+  float b;
+  float angle;
+  float opposite;
+
+  dist1 = sens1.ping_median(3);
+  dist2 = sens2.ping_median(3);
  
-void alignLeft ()
- { float angle =0;
-  angle = angleMeasurement(16);
-  if (angle > 0) turn(angle,0,period);
-  else turn(-angle,1,period); 
- }
-
-
-//*************************************************************Function for a bunch of variables for sensors
-
-
-float angleMeasurement(int measures) 
-{
- long distFL=0;
- float angle;
-  long distBL=0;
-  int count=0;
-  float threshold;
-  float sumAngle=0;
-  float dif = 0;
-  // take 9 reading and use the average
+  distanceXY = abs(dist1-dist2)/2;
   
-  distFL += sonarFL.ping_median(9);
-  distBL += sonarBL.ping_median(9);
-
-  threshold = distFL-distBL;
-  dist_wall +=(distFL+distBL)/2;
-
- dist_wall *=micro_to_inches;
-
- // getting rid of readings that are anomalies by comparing them to threshold, which is the difference between the two sensors on one side
- for (int i=0; i<measures; i++)
+  opposite = (dist1-dist2);
+  
+  if (abs(opposite) < sensWidth)
   {
-    delay(30);
-    distFL = sonarFL.ping();
-    delay(30);
-    distBL = sonarBL.ping();
-  
-    dif = (distFL-distBL);
-    if ((dif>(threshold-30) )&& (dif<(threshold+30)))
-      {
-        sumAngle +=dif;
-        count++;
-      }
+    angle = asin(opposite/sensWidth)*(180/pi);
+    return angle;
   }
-  if (count != 0)    sumAngle /= count;    
-
- dif = sumAngle;
-  dif *= micro_to_inches; //micro_to_inches is ised to determine the angle. we need a value in inches so we can perform the arcsin calculation
-
-// calculating the angle between a wall and the side of the robot based on the difference between the readings of the two sensors on that side    
-  if (dif>0)
-       angle = asin(dif/3.75)*180/3.14159265;
-      
-    if (dif<0)
-      angle = asin(dif/3.75)*180/3.14159265;
-  
-
- return(angle); 
-}
-
-
-
-//**********************************************************Calculate angle and allign (left side)
-
-void AngleLeft()
-{
-  long distLF=0;
-  long distLB=0;
-  for (int i =0 ; i < 5; i++)
-  {
-    distLF += sonarLF.ping_median(5);
-    distLB += sonarLB.ping_median(5);
-  }
-  float dif = (distLF-distLB)/5*micro_to_inches;
-  float angle;
-    if (dif>0)
-       angle = asin(dif/3.75)*180/3.14159265;
-      
-    if (dif<0)
-      angle = asin(dif/3.75)*180/3.14159265;
-        
-  Serial.print("angle left: ");
-  Serial.print(angle);
-  Serial.println(" degrees");
-
-  if (angle>3)
-    turn(angle,0,period);
-  if (angle<-3)  
-     turn(abs(angle),1,period);
-    
-  
-}
-
-//**********************************************************Calculate angle and allign (right side)
-
-void AngleRight()
-{
-  long distRF=0;
-  long distRB=0;
-  for (int i =0 ; i < 5; i++)
-  {
-    distRF += sonarRF.ping_median(5);
-    distRB += sonarRB.ping_median(5);
-  }
-  float dif = (distRF-distRB)/5*micro_to_inches;
-  float angle;
-    if (dif>0)
-       angle = asin(dif/3.75)*180/3.14159265;
-      
-    if (dif<0)
-      angle = asin(dif/3.75)*180/3.14159265;
-        
-  Serial.print("angle right: ");
-  Serial.print(angle);
-  Serial.println(" degrees");
-
-  if (angle>3)
-    turn(angle,0,period);
-  if (angle<-3)  
-     turn(abs(angle),1,period);
-    
-  
-}
-
-//**********************************************************Calculate angle and allign (front side)
-
-void AngleFront()
-{
-  long distFL=0;
-  long distFR=0;
-  for (int i =0 ; i < 5; i++)
-  {
-    distFL += sonarFL.ping_median(5);
-    distFR += sonarFR.ping_median(5);
-  }
-  float dif = (distFL-distFR)/5*micro_to_inches;
-  float angle;
-    if (dif>0)
-       angle = asin(dif/3.75)*180/3.14159265;
-      
-    if (dif<0)
-      angle = asin(dif/3.75)*180/3.14159265;
-        
-  Serial.print("angle front: ");
-  Serial.print(angle);
-  Serial.println(" degrees");
-
-  if (angle>3)
-    turn(angle,0,period);
-  if (angle<-3)  
-     turn(abs(angle),1,period);
-    
-  
-}
-//**********************************************************Calculate angle and allign (Back side)
-
-void AngleBack()
-{
-  long distBR=0;
-  long distBL=0;
-  for (int i =0 ; i < 5; i++)
-  {
-    distBR += sonarBR.ping_median(5);
-    distBL += sonarBL.ping_median(5);
-  }
-  float dif = (distBR-distBL)/5*micro_to_inches;
-  float angle;
-    if (dif>0)
-       angle = asin(dif/3.75)*180/3.14159265;
-      
-    if (dif<0)
-      angle = asin(dif/3.75)*180/3.14159265;
-        
-  Serial.print("angle back: ");
-  Serial.print(angle);
-  Serial.println(" degrees");
-
-  if (angle>3)
-    turn(angle,0,period);
-  if (angle<-3)  
-     turn(abs(angle),1,period);
-    
-  
+  return 100;
 }
 
 

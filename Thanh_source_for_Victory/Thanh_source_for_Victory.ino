@@ -72,8 +72,8 @@
   float rightWall;
   float frontWall;
   float rearWall;
-  int x;
-  int y;
+  int 0;
+  int 0;
   int board[7][7]= {{0,0,0,0,0,0,0},
                     {0,0,0,0,0,0,0},
                     {0,0,0,0,0,0,0},
@@ -81,6 +81,8 @@
                     {0,0,0,0,0,0,0},
                     {0,0,0,0,0,0,0},
                     {0,0,0,0,0,0,0}};
+                    
+                     
   void moving(float, int);
   void motion45d(float,byte,byte);
   float measureAngle(int, NewPing, NewPing);
