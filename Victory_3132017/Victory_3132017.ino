@@ -80,10 +80,8 @@ int period = 1000;
   float Ycentered = 0.75/micro_to_inches;
   float Xcentered = 1.25/micro_to_inches;
   
-  float frontOffset;
-  float backOffset;
-  float leftOffset; 
-  float rightOffset;
+  int Yoffset;
+  int Xoffset;
   
   int sanityBoard[5][5]{{0,0,0,0,0},
                         {0,0,0,0,0},
@@ -261,7 +259,8 @@ while ((x < 5) || (y < 5))
 void checkEmAll()
 {
   
-
+  int yTolerance = 40; //microseconds
+  
   float angleFront;
   float frontDistance;
   float angleLeft;
@@ -272,12 +271,7 @@ void checkEmAll()
   float rightDistance;
 
   float minMag;
-  
-  frontOffset = ((frontDistance-Ycentered)/(6-y))-oneFoot;
-  //backOffset = ((backDistance-Ycentered)/(y))-oneFoot;
-  leftOffset = ((leftDistance-Xcentered)/(x))-oneFoot;
-  //rightOffset = ((rightDistance-Xcentered)/(6-x))-oneFoot;
-  
+   
   Serial.print("front ");
   Serial.println(angleFront);
   Serial.print("left ");
@@ -331,16 +325,19 @@ void checkEmAll()
   {
     angleBack = angleMeas(sonarBR, sonarBL, frontWidth);
     backDistance = distanceXY;
+    Yoffset = ((backDistance-Ycentered)/(y))-oneFoot;
     if ( x < 3)
     {
       angleLeft = angleMeas(sonarLB, sonarLF, sideWidth);
       leftDistance = distanceXY;
+      Xoffset = ((leftDistance-Xcentered)/(x))-oneFoot;
       minMag = (angleLeft+angleBack)/2; //quadrant 3
     }
     else       
     {
       angleRight = angleMeas(sonarRF, sonarRB, sideWidth);
       rightDistance = distanceXY;
+      Xoffset = ((rightDistance-Xcentered)/(6-x))-oneFoot;
       minMag = (angleRight+angleBack)/2; //quadrant 4
     }
   }
@@ -348,16 +345,19 @@ void checkEmAll()
   {
     angleFront = angleMeas(sonarFL, sonarFR, frontWidth);
     frontDistance = distanceXY;
+    Yoffset = ((frontDistance-Ycentered)/(6-y))-oneFoot;
     if (x < 3)
     {
       angleLeft = angleMeas(sonarLB, sonarLF, sideWidth);
       leftDistance = distanceXY;
+      Xoffset = ((leftDistance-Xcentered)/(x))-oneFoot;
       minMag = (angleLeft+angleFront)/2; //quadrant 2
     }
     else
     {
       angleRight = angleMeas(sonarRF, sonarRB, sideWidth);
       rightDistance = distanceXY;
+      Xoffset = ((rightDistance-Xcentered)/(6-x))-oneFoot;
       minMag = (angleRight+angleFront)/2; //quadrant 1
     }
   }
@@ -368,31 +368,27 @@ void checkEmAll()
   }
   else if (minMag < -1)
   {
-    turn(minMag, 0, period);
+    turn(abs(minMag), 0, period);
   }
 
-//  Serial.print("minMag ");
-//  Serial.println(minMag);
-//  Serial.print("\n\n");
+  if (Yoffset > 0)
+  {
+    ForwardBackward(Yoffset,0,period);
+  }
+  else
+  {
+    ForwardBackward(abs(Yoffset),1,period);
+  }
+  if (Xoffset > 0)
+  {
+    strafe(Xoffset,0,period);
+  }
+  else
+  { 
+    strafe(abs(Xoffset),1,period);
+  } 
   
-  
-//  if ((abs(frontOffset) > Ycentered) && (abs(frontOffset-Ycentered) > 37))
-//  {
-//    ForwardBackward(abs(frontOffset), 1, period);
-//  }
-//  else if ((abs(backOffset) < Ycentered) && (abs(backOffset-Ycentered) > 37)) 
-//  {
-//    ForwardBackward(abs(backOffset), 0, period);
-//  }
-//  
-//  if ((abs(rightOffset) > Xcentered) && (abs(rightOffset-Xcentered) > 37))
-//  {
-//    strafe(abs(rightOffset), 1, period);
-//  }
-//  else if ((abs(rightOffset) < Xcentered) && (abs(rightOffset-Xcentered) > 37)) 
-//  {
-//    strafe(abs(rightOffset), 0, period);
-//  }
+
 
 
 
@@ -405,7 +401,6 @@ void checkEmAll()
 float angleMeas(NewPing sens1, NewPing sens2, float sensWidth)//sensWidth front  = 6.75, sensWidth sides = 7.0625
 {
   int N = 5;
-  float threshSanity;
   float dist1;
   float dist2;
   float a;
