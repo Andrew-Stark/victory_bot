@@ -112,12 +112,12 @@ void setup()
   matrix.begin(0x70);
   DDRL = allOutputs;
 
-x = 0;
-y = 0;
+x = 1;
+y = 1;
 
 
 
-gridSearch();
+//gridSearch();
 
 
 //*****test section
@@ -201,7 +201,7 @@ void loop()
 //Serial.print(" Back Right = ");
 //Serial.println(sonarBR.ping_median(5));
 
-//checkEmAll();
+checkEmAll();
 }
 
 void gridSearch()
@@ -286,16 +286,16 @@ void checkEmAll()
 //  Serial.println(angleBack);
 //  Serial.print("right ");
 //  Serial.println(angleRight);
-//  Serial.println("-------------------");
-//  Serial.print("FRONT ");
-//  Serial.println(frontDistance);
-//  Serial.print("LEFT ");
-//  Serial.println(leftDistance);
-//  Serial.print("BACK ");
-//  Serial.println(backDistance);
-//  Serial.print("RIGHT ");
-//  Serial.println(rightDistance);
-//  Serial.println("-------------------");
+  Serial.println("-------------------");
+  Serial.print("FRONT ");
+  Serial.println(frontDistance);
+  Serial.print("LEFT ");
+  Serial.println(leftDistance);
+  Serial.print("BACK ");
+  Serial.println(backDistance);
+  Serial.print("RIGHT ");
+  Serial.println(rightDistance);
+  Serial.println("-------------------");
 //  if (angleFront == 100)
 //    angleFront = angleBack;
 //  if (angleBack == 100)
