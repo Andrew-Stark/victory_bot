@@ -80,6 +80,10 @@ int period = 1000;
   float Ycentered = 0.75/micro_to_inches;
   float Xcentered = 1.25/micro_to_inches;
   
+  float frontOffset;
+  float backOffset;
+  float leftOffset; 
+  float rightOffset;
   
   int sanityBoard[5][5]{{0,0,0,0,0},
                         {0,0,0,0,0},
@@ -241,9 +245,9 @@ while ((x < 5) || (y < 5))
       }
     else if (x == 1 && y%2==0)
       {
-      turn(90,0,period);
-      ForwardBackward(12,1,period);
       turn(90,1,period);
+      ForwardBackward(12,1,period);
+      turn(90,0,period);
       checkEmAll();
       y++;
       //check obstacle
@@ -266,30 +270,28 @@ void checkEmAll()
   float rightDistance = distanceXY;
   float minMag;
   
-  float frontOffset = (frontDistance+Ycentered)/oneFoot;
-  float backOffset = (backDistance+Ycentered)/oneFoot;
-  float leftOffset = (leftDistance+Xcentered)/oneFoot;
-  float rightOffset = (rightDistance+Xcentered)/oneFoot;
+  frontOffset = (frontDistance-Ycentered)/(oneFoot);
+  backOffset = (backDistance-Ycentered)/(oneFoot);
+  leftOffset = (leftDistance-Xcentered)/(oneFoot);
+  rightOffset = (rightDistance-Xcentered)/(oneFoot);
   
-  int goodAngleCount = 0;
-  
-  Serial.print("front ");
-  Serial.println(angleFront);
-  Serial.print("left ");
-  Serial.println(angleLeft);
-  Serial.print("back ");
-  Serial.println(angleBack);
-  Serial.print("right ");
-  Serial.println(angleRight);
-  
-  Serial.print("FRONT ");
-  Serial.println(frontOffset);
-  Serial.print("LEFT ");
-  Serial.println(leftOffset);
-  Serial.print("BACK ");
-  Serial.println(backOffset);
-  Serial.print("RIGHT ");
-  Serial.println(rightOffset);
+//  Serial.print("front ");
+//  Serial.println(angleFront);
+//  Serial.print("left ");
+//  Serial.println(angleLeft);
+//  Serial.print("back ");
+//  Serial.println(angleBack);
+//  Serial.print("right ");
+//  Serial.println(angleRight);
+//  
+//  Serial.print("FRONT ");
+//  Serial.println(frontOffset);
+//  Serial.print("LEFT ");
+//  Serial.println(leftOffset);
+//  Serial.print("BACK ");
+//  Serial.println(backOffset);
+//  Serial.print("RIGHT ");
+//  Serial.println(rightOffset);
   
   if (angleFront == 100)
     angleFront = angleBack;
@@ -335,18 +337,38 @@ void checkEmAll()
     minMag = abs(angleRight);
   }
   
-  if (minMag>2)
-  {
-    turn(minMag, 1, period);
-  }
-  else if (minMag < -2)
+  if (minMag>1)
   {
     turn(minMag, 0, period);
   }
+  else if (minMag < -1)
+  {
+    turn(minMag, 1, period);
+  }
 
-  Serial.print("minMag ");
-  Serial.println(minMag);
-  Serial.print("\n\n");
+//  Serial.print("minMag ");
+//  Serial.println(minMag);
+//  Serial.print("\n\n");
+  
+  
+  if ((abs(frontOffset) > Ycentered) && (abs(frontOffset-Ycentered) > 0.5))
+  {
+    ForwardBackward(abs(frontOffset), 1, period);
+  }
+  else if ((abs(frontOffset) < Ycentered) && (abs(frontOffset-Ycentered) > 0.5)) 
+  {
+    ForwardBackward(abs(frontOffset), 0, period);
+  }
+  
+  if ((abs(rightOffset) > Xcentered) && (abs(rightOffset-Xcentered) > 0.5))
+  {
+    strafe(abs(rightOffset), 1, period);
+  }
+  else if ((abs(rightOffset) < Xcentered) && (abs(rightOffset-Xcentered) > 0.5)) 
+  {
+    strafe(abs(rightOffset), 0, period);
+  }
+  
 
 
 }
