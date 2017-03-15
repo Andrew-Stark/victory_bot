@@ -419,18 +419,21 @@ void checkEmAll()
 float angleMeas(NewPing sens1, NewPing sens2, float sensWidth)//sensWidth front  = 6.75, sensWidth sides = 7.0625
 {
   int N = 5;
-  float dist1;
-  float dist2;
+  float dist1 = 0;
+  float dist2 = 0;
   float a;
   float b;
   float angle;
   float opposite;
 
   for (int i=0;i<N;i++){
-  dist1 = sens1.ping_median(5);
-  dist2 = sens2.ping_median(5);
+  dist1 += sens1.ping_median(5);
+  dist2 += sens2.ping_median(5);
   }
- 
+  
+  dist1 /= N;
+  dist2 /= N; 
+   
   distanceXY = (dist1+dist2)/2;
   
   opposite = (dist1-dist2);
