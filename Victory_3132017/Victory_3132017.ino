@@ -83,6 +83,8 @@ int period = 1000;
   int Yoffset;
   int Xoffset;
   
+  int checkCount = 6;
+  
   int sanityBoard[5][5]{{0,0,0,0,0},
                         {0,0,0,0,0},
                         {0,0,0,0,0},
@@ -113,7 +115,9 @@ void setup()
 x = 0;
 y = 0;
 
-//gridSearch();
+
+
+gridSearch();
 
 
 //*****test section
@@ -197,15 +201,17 @@ void loop()
 //Serial.print(" Back Right = ");
 //Serial.println(sonarBR.ping_median(5));
 
-checkEmAll();
+//checkEmAll();
 }
 
 void gridSearch()
 {
 matrix.clear();  
 ForwardBackward(12,1,period);
+y++;
 turn(90,1,period);
 ForwardBackward(12,1,period);
+x++;
 turn(90,0,period);
 checkEmAll();
 markHere(x,y);
@@ -272,24 +278,24 @@ void checkEmAll()
 
   float minMag;
    
-  Serial.print("front ");
-  Serial.println(angleFront);
-  Serial.print("left ");
-  Serial.println(angleLeft);
-  Serial.print("back ");
-  Serial.println(angleBack);
-  Serial.print("right ");
-  Serial.println(angleRight);
-  Serial.println("-------------------");
-  Serial.print("FRONT ");
-  Serial.println(frontDistance);
-  Serial.print("LEFT ");
-  Serial.println(leftDistance);
-  Serial.print("BACK ");
-  Serial.println(backDistance);
-  Serial.print("RIGHT ");
-  Serial.println(rightDistance);
-  Serial.println("-------------------");
+//  Serial.print("front ");
+//  Serial.println(angleFront);
+//  Serial.print("left ");
+//  Serial.println(angleLeft);
+//  Serial.print("back ");
+//  Serial.println(angleBack);
+//  Serial.print("right ");
+//  Serial.println(angleRight);
+//  Serial.println("-------------------");
+//  Serial.print("FRONT ");
+//  Serial.println(frontDistance);
+//  Serial.print("LEFT ");
+//  Serial.println(leftDistance);
+//  Serial.print("BACK ");
+//  Serial.println(backDistance);
+//  Serial.print("RIGHT ");
+//  Serial.println(rightDistance);
+//  Serial.println("-------------------");
 //  if (angleFront == 100)
 //    angleFront = angleBack;
 //  if (angleBack == 100)
@@ -388,9 +394,21 @@ void checkEmAll()
     strafe(abs(Xoffset),1,period);
   } 
   
+ 
 
-
-
+ if((checkCount % 2) == 0)
+ {
+   matrix.drawPixel(7,7, LED_RED);
+   matrix.writeDisplay();
+   checkCount++;
+ }
+ else
+ {
+   matrix.drawPixel(7,7, LED_GREEN);
+   matrix.writeDisplay();
+   checkCount--;
+   
+ }
 
 }
 
@@ -408,9 +426,10 @@ float angleMeas(NewPing sens1, NewPing sens2, float sensWidth)//sensWidth front 
   float angle;
   float opposite;
 
-  
+  for (int i=0;i<N;i++){
   dist1 = sens1.ping_median(5);
   dist2 = sens2.ping_median(5);
+  }
  
   distanceXY = (dist1+dist2)/2;
   
@@ -423,6 +442,7 @@ float angleMeas(NewPing sens1, NewPing sens2, float sensWidth)//sensWidth front 
   }
   return 100;
 }
+
 
 
 
