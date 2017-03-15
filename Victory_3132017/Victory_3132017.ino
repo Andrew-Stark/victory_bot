@@ -57,7 +57,7 @@ int period = 1000;
   #define TRIGGER_SensorBR 24     //?
   #define ECHO_SensorBR 25       //? 
   
-  #define Max_Distance   200
+  #define Max_Distance   100
 
   NewPing sonarFL(TRIGGER_SensorFL, ECHO_SensorFL,Max_Distance);
   NewPing sonarBL(TRIGGER_SensorBL, ECHO_SensorBL,Max_Distance);
@@ -112,8 +112,8 @@ void setup()
   matrix.begin(0x70);
   DDRL = allOutputs;
 
-x = 1;
-y = 1;
+x = 0;
+y = 0;
 
 //gridSearch();
 
@@ -260,20 +260,23 @@ while ((x < 5) || (y < 5))
 
 void checkEmAll()
 {
-  float angleFront = angleMeas(sonarFL, sonarFR, frontWidth);
-  float frontDistance = distanceXY;
-  float angleLeft = angleMeas(sonarLB, sonarLF, sideWidth);
-  float leftDistance = distanceXY;
-  float angleBack = angleMeas(sonarBR, sonarBL, frontWidth);
-  float backDistance = distanceXY;
-  float angleRight = angleMeas(sonarRF, sonarRB, sideWidth);
-  float rightDistance = distanceXY;
+  
+
+  float angleFront;
+  float frontDistance;
+  float angleLeft;
+  float leftDistance;
+  float angleBack;
+  float backDistance;
+  float angleRight;
+  float rightDistance;
+
   float minMag;
   
-  frontOffset = (frontDistance-Ycentered)/(oneFoot);
-  backOffset = (backDistance-Ycentered)/(oneFoot);
-  leftOffset = (leftDistance-Xcentered)/(oneFoot);
-  rightOffset = (rightDistance-Xcentered)/(oneFoot);
+  frontOffset = ((frontDistance-Ycentered)/(6-y))-oneFoot;
+  //backOffset = ((backDistance-Ycentered)/(y))-oneFoot;
+  leftOffset = ((leftDistance-Xcentered)/(x))-oneFoot;
+  //rightOffset = ((rightDistance-Xcentered)/(6-x))-oneFoot;
   
   Serial.print("front ");
   Serial.println(angleFront);
@@ -283,24 +286,24 @@ void checkEmAll()
   Serial.println(angleBack);
   Serial.print("right ");
   Serial.println(angleRight);
-  
+  Serial.println("-------------------");
   Serial.print("FRONT ");
-  Serial.println(frontOffset);
+  Serial.println(frontDistance);
   Serial.print("LEFT ");
-  Serial.println(leftOffset);
+  Serial.println(leftDistance);
   Serial.print("BACK ");
-  Serial.println(backOffset);
+  Serial.println(backDistance);
   Serial.print("RIGHT ");
-  Serial.println(rightOffset);
-  
-  if (angleFront == 100)
-    angleFront = angleBack;
-  if (angleBack == 100)
-    angleBack = angleFront;
-  if (angleRight == 100)
-    angleRight = angleLeft;
-  if (angleLeft == 100)
-    angleLeft = angleRight;
+  Serial.println(rightDistance);
+  Serial.println("-------------------");
+//  if (angleFront == 100)
+//    angleFront = angleBack;
+//  if (angleBack == 100)
+//    angleBack = angleFront;
+//  if (angleRight == 100)
+//    angleRight = angleLeft;
+//  if (angleLeft == 100)
+//    angleLeft = angleRight;
   
 //  minMag += angleFront;
 //  minMag += angleRight;
@@ -309,32 +312,54 @@ void checkEmAll()
 //  
 //  minMag /= 4;
   
-  if(angleFront != angleFront)
+//  if(angleFront != angleFront)
+//  {
+//    minMag = 45; 
+//  }
+//  else
+//  {
+//    minMag = abs(angleFront);
+//  }
+//  
+//  }
+//  else if ((abs(minMag) > abs(angleBack)) && !(angleBack != angleBack))
+//  {
+//    minMag = abs(angleBack);
+//  }
+
+  if ( y < 3)
   {
-    minMag = 45; 
+    angleBack = angleMeas(sonarBR, sonarBL, frontWidth);
+    backDistance = distanceXY;
+    if ( x < 3)
+    {
+      angleLeft = angleMeas(sonarLB, sonarLF, sideWidth);
+      leftDistance = distanceXY;
+      minMag = (angleLeft+angleBack)/2; //quadrant 3
+    }
+    else       
+    {
+      angleRight = angleMeas(sonarRF, sonarRB, sideWidth);
+      rightDistance = distanceXY;
+      minMag = (angleRight+angleBack)/2; //quadrant 4
+    }
   }
-  else
+  else 
   {
-    minMag = abs(angleFront);
-    
-  }
-  
-  if ((abs(minMag) > abs(angleLeft)) && !(angleLeft != angleLeft))
-  {
-    minMag = abs(angleLeft);
-  }
-  else if ((abs(minMag) > abs(angleBack)) && !(angleBack != angleBack))
-  {
-    minMag = abs(angleBack);
-  }
-  else if ((abs(minMag) > abs(angleRight)) && !(angleRight != angleRight))
-  {
-    minMag = abs(angleRight);
-  }
-  
-  if (minMag == 45)
-  {
-    minMag = abs(angleRight);
+    angleFront = angleMeas(sonarFL, sonarFR, frontWidth);
+    frontDistance = distanceXY;
+    if (x < 3)
+    {
+      angleLeft = angleMeas(sonarLB, sonarLF, sideWidth);
+      leftDistance = distanceXY;
+      minMag = (angleLeft+angleFront)/2; //quadrant 2
+    }
+    else
+    {
+      angleRight = angleMeas(sonarRF, sonarRB, sideWidth);
+      rightDistance = distanceXY;
+      minMag = (angleRight+angleFront)/2; //quadrant 1
+    }
   }
   
   if (minMag>1)
@@ -351,24 +376,24 @@ void checkEmAll()
 //  Serial.print("\n\n");
   
   
-  if ((abs(frontOffset) > Ycentered) && (abs(frontOffset-Ycentered) > 0.5))
-  {
-    ForwardBackward(abs(frontOffset), 1, period);
-  }
-  else if ((abs(frontOffset) < Ycentered) && (abs(frontOffset-Ycentered) > 0.5)) 
-  {
-    ForwardBackward(abs(frontOffset), 0, period);
-  }
-  
-  if ((abs(rightOffset) > Xcentered) && (abs(rightOffset-Xcentered) > 0.5))
-  {
-    strafe(abs(rightOffset), 1, period);
-  }
-  else if ((abs(rightOffset) < Xcentered) && (abs(rightOffset-Xcentered) > 0.5)) 
-  {
-    strafe(abs(rightOffset), 0, period);
-  }
-  
+//  if ((abs(frontOffset) > Ycentered) && (abs(frontOffset-Ycentered) > 37))
+//  {
+//    ForwardBackward(abs(frontOffset), 1, period);
+//  }
+//  else if ((abs(backOffset) < Ycentered) && (abs(backOffset-Ycentered) > 37)) 
+//  {
+//    ForwardBackward(abs(backOffset), 0, period);
+//  }
+//  
+//  if ((abs(rightOffset) > Xcentered) && (abs(rightOffset-Xcentered) > 37))
+//  {
+//    strafe(abs(rightOffset), 1, period);
+//  }
+//  else if ((abs(rightOffset) < Xcentered) && (abs(rightOffset-Xcentered) > 37)) 
+//  {
+//    strafe(abs(rightOffset), 0, period);
+//  }
+
 
 
 }
@@ -388,10 +413,11 @@ float angleMeas(NewPing sens1, NewPing sens2, float sensWidth)//sensWidth front 
   float angle;
   float opposite;
 
-  dist1 = sens1.ping_median(3);
-  dist2 = sens2.ping_median(3);
+  
+  dist1 = sens1.ping_median(5);
+  dist2 = sens2.ping_median(5);
  
-  distanceXY = abs(dist1-dist2)/2;
+  distanceXY = (dist1+dist2)/2;
   
   opposite = (dist1-dist2);
   
