@@ -379,19 +379,19 @@ void checkEmAll()
 
   if (Yoffset > 0)
   {
-    ForwardBackward(Yoffset,0,period);
+    ForwardBackward(Yoffset*micro_to_inches,0,period);
   }
   else
   {
-    ForwardBackward(abs(Yoffset),1,period);
+    ForwardBackward(abs(Yoffset)*micro_to_inches,1,period);
   }
   if (Xoffset > 0)
   {
-    strafe(Xoffset,0,period);
+    strafe(Xoffset*micro_to_inches,0,period);
   }
   else
   { 
-    strafe(abs(Xoffset),1,period);
+    strafe(abs(Xoffset)*micro_to_inches,1,period);
   } 
   
  
