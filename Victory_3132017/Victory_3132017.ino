@@ -331,19 +331,19 @@ void checkEmAll()
   {
     angleBack = angleMeas(sonarBR, sonarBL, frontWidth);
     backDistance = distanceXY;
-    Yoffset = ((backDistance-Ycentered)/(y))-oneFoot;
+    Yoffset = (backDistance-Ycentered)-oneFoot*y;
     if ( x < 3)
     {
       angleLeft = angleMeas(sonarLB, sonarLF, sideWidth);
       leftDistance = distanceXY;
-      Xoffset = ((leftDistance-Xcentered)/(x))-oneFoot;
+      Xoffset = (leftDistance-Xcentered)-oneFoot*x;
       minMag = (angleLeft+angleBack)/2; //quadrant 3
     }
     else       
     {
       angleRight = angleMeas(sonarRF, sonarRB, sideWidth);
       rightDistance = distanceXY;
-      Xoffset = ((rightDistance-Xcentered)/(6-x))-oneFoot;
+      Xoffset = (rightDistance-Xcentered)-oneFoot*(6-x);
       minMag = (angleRight+angleBack)/2; //quadrant 4
     }
   }
@@ -351,19 +351,19 @@ void checkEmAll()
   {
     angleFront = angleMeas(sonarFL, sonarFR, frontWidth);
     frontDistance = distanceXY;
-    Yoffset = ((frontDistance-Ycentered)/(6-y))-oneFoot;
+    Yoffset = (frontDistance-Ycentered)-oneFoot*(6-y);
     if (x < 3)
     {
       angleLeft = angleMeas(sonarLB, sonarLF, sideWidth);
       leftDistance = distanceXY;
-      Xoffset = ((leftDistance-Xcentered)/(x))-oneFoot;
+      Xoffset = (leftDistance-Xcentered)-oneFoot*x;
       minMag = (angleLeft+angleFront)/2; //quadrant 2
     }
     else
     {
       angleRight = angleMeas(sonarRF, sonarRB, sideWidth);
       rightDistance = distanceXY;
-      Xoffset = ((rightDistance-Xcentered)/(6-x))-oneFoot;
+      Xoffset = (rightDistance-Xcentered)-oneFoot*(6-x);
       minMag = (angleRight+angleFront)/2; //quadrant 1
     }
   }
