@@ -115,7 +115,7 @@ void setup()
 x = 1;
 y = 1;
 
-gridSearch();
+//gridSearch();
 
 
 //*****test section
@@ -199,7 +199,7 @@ void loop()
 //Serial.print(" Back Right = ");
 //Serial.println(sonarBR.ping_median(5));
 
-//checkEmAll();
+checkEmAll();
 }
 
 void gridSearch()
@@ -275,23 +275,23 @@ void checkEmAll()
   leftOffset = (leftDistance-Xcentered)/(oneFoot);
   rightOffset = (rightDistance-Xcentered)/(oneFoot);
   
-//  Serial.print("front ");
-//  Serial.println(angleFront);
-//  Serial.print("left ");
-//  Serial.println(angleLeft);
-//  Serial.print("back ");
-//  Serial.println(angleBack);
-//  Serial.print("right ");
-//  Serial.println(angleRight);
-//  
-//  Serial.print("FRONT ");
-//  Serial.println(frontOffset);
-//  Serial.print("LEFT ");
-//  Serial.println(leftOffset);
-//  Serial.print("BACK ");
-//  Serial.println(backOffset);
-//  Serial.print("RIGHT ");
-//  Serial.println(rightOffset);
+  Serial.print("front ");
+  Serial.println(angleFront);
+  Serial.print("left ");
+  Serial.println(angleLeft);
+  Serial.print("back ");
+  Serial.println(angleBack);
+  Serial.print("right ");
+  Serial.println(angleRight);
+  
+  Serial.print("FRONT ");
+  Serial.println(frontOffset);
+  Serial.print("LEFT ");
+  Serial.println(leftOffset);
+  Serial.print("BACK ");
+  Serial.println(backOffset);
+  Serial.print("RIGHT ");
+  Serial.println(rightOffset);
   
   if (angleFront == 100)
     angleFront = angleBack;
@@ -339,11 +339,11 @@ void checkEmAll()
   
   if (minMag>1)
   {
-    turn(minMag, 0, period);
+    turn(minMag, 1, period);
   }
   else if (minMag < -1)
   {
-    turn(minMag, 1, period);
+    turn(minMag, 0, period);
   }
 
 //  Serial.print("minMag ");
