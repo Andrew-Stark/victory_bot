@@ -81,8 +81,8 @@ int period = 1000;
   
   int Yoffset;
   int Xoffset;
+  int yTolerance = 40; //microseconds
   
-  int checkCount = 6;
   
   int sanityBoard[5][5]{{0,0,0,0,0},
                         {0,0,0,0,0},
@@ -211,8 +211,10 @@ y++;
 turn(90,1,period);
 ForwardBackward(12,1,period);
 x++;
+transCorrection(x);
 turn(90,0,period);
-checkEmAll();
+transCorrection(y);
+rotateCorrection();
 markHere(x,y);
 while ((x < 5) || (y < 5))
   {
@@ -229,7 +231,7 @@ while ((x < 5) || (y < 5))
     {
       ForwardBackward(12,0,period);
       y--;
-                //check obstacle
+          //check obstacle
           //check tick tracer / dead end
           //display result
           markHere(x,y);
@@ -237,9 +239,11 @@ while ((x < 5) || (y < 5))
     else if (y == 5 && x%2 != 0)
       {
         turn(90,1,period);
+        rotateCorrection();
+        transCorrection(x);     
         ForwardBackward(12,1,period);
         turn(90,0,period);
-        checkEmAll();
+        transCorrection(y);
         x++;
           //check obstacle
           //check tick tracer / dead end
@@ -249,9 +253,11 @@ while ((x < 5) || (y < 5))
     else if (y == 1 && x%2==0)
       {
       turn(90,1,period);
+      rotateCorrection();
+      transCorrection(x);
       ForwardBackward(12,1,period);
       turn(90,0,period);
-      checkEmAll();
+      transCorrection(y);
       x++;
       //check obstacle
       //check tick tracer / dead end
@@ -261,19 +267,15 @@ while ((x < 5) || (y < 5))
    }
 }
 
-void checkEmAll()
+void rotateCorrection()
 {
   
-  int yTolerance = 40; //microseconds
+
   
   float angleFront;
-  float frontDistance;
   float angleLeft;
-  float leftDistance;
   float angleBack;
-  float backDistance;
   float angleRight;
-  float rightDistance;
 
   float minMag;
    
@@ -285,84 +287,40 @@ void checkEmAll()
 //  Serial.println(angleBack);
 //  Serial.print("right ");
 //  Serial.println(angleRight);
-  Serial.println("-------------------");
-  Serial.print("FRONT ");
-  Serial.println(frontDistance);
-  Serial.print("LEFT ");
-  Serial.println(leftDistance);
-  Serial.print("BACK ");
-  Serial.println(backDistance);
-  Serial.print("RIGHT ");
-  Serial.println(rightDistance);
-  Serial.println("-------------------");
-//  if (angleFront == 100)
-//    angleFront = angleBack;
-//  if (angleBack == 100)
-//    angleBack = angleFront;
-//  if (angleRight == 100)
-//    angleRight = angleLeft;
-//  if (angleLeft == 100)
-//    angleLeft = angleRight;
-  
-//  minMag += angleFront;
-//  minMag += angleRight;
-//  minMag += angleLeft;
-//  minMag += angleBack;
-//  
-//  minMag /= 4;
-  
-//  if(angleFront != angleFront)
-//  {
-//    minMag = 45; 
-//  }
-//  else
-//  {
-//    minMag = abs(angleFront);
-//  }
-//  
-//  }
-//  else if ((abs(minMag) > abs(angleBack)) && !(angleBack != angleBack))
-//  {
-//    minMag = abs(angleBack);
-//  }
+//  Serial.println("-------------------");
+//  Serial.print("FRONT ");
+//  Serial.println(frontDistance);
+//  Serial.print("LEFT ");
+//  Serial.println(leftDistance);
+//  Serial.print("BACK ");
+//  Serial.println(backDistance);
+//  Serial.print("RIGHT ");
+//  Serial.println(rightDistance);
+//  Serial.println("-------------------");
 
   if ( y < 3)
-  {
-    angleBack = angleMeas(sonarBR, sonarBL, frontWidth);
-    backDistance = distanceXY;
-    Yoffset = (backDistance-Ycentered)-oneFoot*y;
+  {  
     if ( x < 3)
     {
       angleLeft = angleMeas(sonarLB, sonarLF, sideWidth);
-      leftDistance = distanceXY;
-      Xoffset = (leftDistance-Xcentered)-oneFoot*x;
       minMag = (angleLeft+angleBack)/2; //quadrant 3
     }
     else       
     {
       angleRight = angleMeas(sonarRF, sonarRB, sideWidth);
-      rightDistance = distanceXY;
-      Xoffset = ((rightDistance-Xcentered)/(6-x))-oneFoot;
       minMag = (angleRight+angleBack)/2; //quadrant 4
     }
   }
   else 
-  {
-    angleFront = angleMeas(sonarFL, sonarFR, frontWidth);
-    frontDistance = distanceXY;
-    Yoffset = ((frontDistance-Ycentered)/(6-y))-oneFoot;
+  { 
     if (x < 3)
     {
       angleLeft = angleMeas(sonarLB, sonarLF, sideWidth);
-      leftDistance = distanceXY;
-      Xoffset = (leftDistance-Xcentered)-oneFoot*x;
       minMag = (angleLeft+angleFront)/2; //quadrant 2
     }
     else
     {
       angleRight = angleMeas(sonarRF, sonarRB, sideWidth);
-      rightDistance = distanceXY;
-      Xoffset = ((rightDistance-Xcentered)/(6-x))-oneFoot;
       minMag = (angleRight+angleFront)/2; //quadrant 1
     }
   }
@@ -375,8 +333,28 @@ void checkEmAll()
   {
     turn(abs(minMag), 0, period);
   }
+}
 
-  if (Yoffset > 0)
+//****************** align to wall
+void transCorrection(int dimension)
+{
+
+  float backDistance;
+  float frontDistance;
+  if (dimension < 3)
+  {
+  angleMeas(sonarBR, sonarBL, frontWidth); 
+  backDistance = distanceXY; 
+  Yoffset = (backDistance-Ycentered)-oneFoot*(dimension);
+  }
+  else
+  {
+  angleMeas(sonarFL, sonarFR, frontWidth);
+  frontDistance = distanceXY;
+  Yoffset = (frontDistance-Ycentered)-oneFoot*(6-dimension);
+  }
+  
+   if (Yoffset > 0)
   {
     ForwardBackward(Yoffset*micro_to_inches,0,period);
   }
@@ -384,41 +362,8 @@ void checkEmAll()
   {
     ForwardBackward(abs(Yoffset*micro_to_inches),1,period);
   }
-  if (Xoffset > 0)
-  {
-    //turn(90,1,period);
-    //ForwardBackward(Yoffset*micro_to_inches,0,period);
-    //turn(90,0,period);
-    strafe(Xoffset*micro_to_inches,0,period);
-  }
-  else
-  { 
-    //turn(90,1,period);
-    //ForwardBackward(Yoffset*micro_to_inches,1,period);
-    //turn(90,0,period);
-    strafe(abs(Xoffset*micro_to_inches),1,period);
-  } 
-  
- 
-
- if((checkCount % 2) == 0)
- {
-   matrix.drawPixel(7,7, LED_RED);
-   matrix.writeDisplay();
-   checkCount++;
- }
- else
- {
-   matrix.drawPixel(7,7, LED_GREEN);
-   matrix.writeDisplay();
-   checkCount--;
-   
- }
 
 }
-
-//****************** align to wall
-
 //**********************************************************Calculate angle
 // firts sensor is MOST COUNTERCLOCKWISE
 float angleMeas(NewPing sens1, NewPing sens2, float sensWidth)//sensWidth front  = 6.75, sensWidth sides = 7.0625
