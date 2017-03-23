@@ -60,8 +60,8 @@ int period = 1000;
   int Threshold = 513;          //if analogRead is greater than this value then increase counter
   
   
-      int getData[arrayIndex] = {0};
-      int fiveData[arrayIndex*5] = {0};                              //this is the sample data
+  int getData[arrayIndex] = {0};
+  static int fiveData[6000] = {0};                              //this is the sample data
   
   int counter = 0;              //counts of signal going above the threshold
   int micPin= 0;                 //microphone pin number
@@ -72,8 +72,6 @@ int period = 1000;
   
   long timerA;
   long timerB;
-  
-  int fiveArrayIndex = arrayIndex*5;
   
   NewPing sonarFL(TRIGGER_SensorFL, ECHO_SensorFL,Max_Distance);
   NewPing sonarBL(TRIGGER_SensorBL, ECHO_SensorBL,Max_Distance);
@@ -157,6 +155,8 @@ void setup()
   byte allOutputs = B11111111;
   matrix.begin(0x70);
   DDRL = allOutputs;
+  DDRB = allOutputs;
+  PORTB = 0x00;
   
   ADCSRA &= ~PS_128;
   ADCSRA |= PS_64;
@@ -242,29 +242,32 @@ void loop()
 //}
 //Serial.print("thump");
 for(int j = 0; j < 5; j++){
-    digitalWrite(thumperPin, HIGH);
+    PORTB ^= 0x08;
     delay(25);
-    digitalWrite(thumperPin, LOW);
-    //timerA = micros();    
+    PORTB ^= 0x08;
+    timerA = micros(); 
+    Serial.println("pre-loop");   
     for (int i =0; i<arrayIndex;i++){
-      getData[i] = analogRead(micPin);       //sample data
-    }
-    for (int
-     //timerB = micros();
+    Serial.println("within-loop"); 
+      int x = analogRead(micPin);
+      fiveData[i+arrayIndex*j] = x;
+  }
+    
+     timerB = micros();
      delay(50);
      
-     //Serial.print("time: ");
-     //Serial.println(timerB - timerA);   
+     Serial.print("time: ");
+     Serial.println(timerB - timerA);   
 }
-for(int k = 0; k<(arrayIndex*5); k++)
-{
-  if(thumpData.fiveData[k]>Threshold)
-  {
-    counter++;
-  }
-}
+//for(int k = 0; k<(arrayIndex*5); k++)
+//{
+//  if(fiveData[k]>Threshold)
+//  {
+//    counter++;
+//  }
+//}
 Serial.println(counter);
-counter = 0;
+//counter = 0;
 delay(1000);
 
 //Serial.print("counter = ");
