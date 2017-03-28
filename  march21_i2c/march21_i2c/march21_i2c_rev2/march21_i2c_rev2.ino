@@ -1,11 +1,9 @@
 #include <gfxfont.h>
 #include <Adafruit_GFX.h>
-
 #include <Wire.h>
-
-
-  #include <NewPing.h>
-  #include <Adafruit_LEDBackpack.h>
+#include <NewPing.h>
+#include <Adafruit_LEDBackpack.h>
+#include <stdint.h>
 
 byte FWD = B00100010;  //ok
 byte REV = B10001000; 
@@ -56,8 +54,25 @@ int period = 1000;
   #define TRIGGER_SensorBR 24     //?
   #define ECHO_SensorBR 25       //? 
   
-  #define Max_Distance   100
-
+  #define Max_Distance   100 
+  #define arrayIndex 1200        //may have to either decrease or increase the number of sample data reading that we take
+ 
+  int thresHold = 513;          //if analogRead is greater than this value then increase counter
+  int thresHoldTick = 300;
+  
+  int getData[arrayIndex] = {0};
+  
+  int counter = 0;              //counts of signal going above the threshold
+  int micPin= 0;                 //microphone pin number
+  int tickPin = 1;
+  
+  int thumperPin = 50;          //thumper pin number
+  
+  long averaging = 0;
+  
+  long timerA;
+  long timerB;
+  
   NewPing sonarFL(TRIGGER_SensorFL, ECHO_SensorFL,Max_Distance);
   NewPing sonarBL(TRIGGER_SensorBL, ECHO_SensorBL,Max_Distance);
   NewPing sonarBR(TRIGGER_SensorBR, ECHO_SensorBR,Max_Distance);
@@ -81,14 +96,36 @@ int period = 1000;
   
   int Yoffset;
   int Xoffset;
-  int yTolerance = 40; //microseconds
+
+  union byteToInt {byte input[4]; uint32_t out;};
+
+  byteToInt byte_to_int;
+
+  boolean gotData = 0;
   
+  int byteCount = 0;
+  
+  const int FFT_SIZE = 256;
+
+  uint32_t magnitudes[FFT_SIZE];
+  
+  int fft_bin = 0;
+  
+  boolean newMeas = false;
+  
+  int checkCount = 6;
   
   int sanityBoard[5][5]{{0,0,0,0,0},
                         {0,0,0,0,0},
                         {0,0,0,0,0},
                         {0,0,0,0,0},
                         {0,0,0,0,0}};
+                        
+    // Define various ADC prescaler
+    const unsigned char PS_16 = (1 << ADPS2);
+    const unsigned char PS_32 = (1 << ADPS2) | (1 << ADPS0);
+    const unsigned char PS_64 = (1 << ADPS2) | (1 << ADPS1);
+    const unsigned char PS_128 = (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
    
 //************************************************* LED MATRIX  
 int x;
@@ -103,20 +140,48 @@ int board[7][7]= {{0,0,0,0,0,0,0},
                   
   
 Adafruit_BicolorMatrix matrix = Adafruit_BicolorMatrix();
+
+//8************************************************* COMMAND PINS
+int commandPin = 52;
 //**************************************************SETUP
 void setup() 
 {
-  Serial.begin(9600);
+  pinMode(thumperPin, OUTPUT);
+  
+//  Wire.begin(8);
+//  Wire.onReceive(receiveEvent);
+  Serial.begin(115200);
+  //analogReadResolution(10);
   byte allOutputs = B11111111;
   matrix.begin(0x70);
   DDRL = allOutputs;
+  DDRB = allOutputs;
+  DDRK = allOutputs;
+  
+  analogReference(INTERNAL2V56);
+  
+  int fuck = 0;
+  int your = 10;
+  int self = 0;
+  for(int go = fuck; go < your; go++){
+    self = analogRead(0);
+    int douche = analogRead(1);
+  }
+  
+  PORTK = 0x00;
+  PORTB = 0x00;
+  
+  ADCSRA &= ~PS_128;
+  ADCSRA |= PS_64;
 
 x = 0;
 y = 0;
 
+delay(200);
 
 
-gridSearch();
+
+//gridSearch();
 
 
 //*****test section
@@ -131,32 +196,6 @@ gridSearch();
 //arcMotion(90,1,1,300);       // (radius, arc degrees, left/right, fw/bw, delay)
 //pivotMotion(90,1,1,300);    // (radius, arc degrees, left/right, fw/bw, delay)
 
-//variable speed functions
-//varSpeed (600,r,12,0); //calibrated 95%ish   (delay, speed ratio, distance, direction) (2.08 ratio/ 105 inches for almost perfect 12 in radius circle)
-
-//final variable speed plus acceleration. working ok
-
-//Steps = 1;
-//float del;
-//for (int i=1; i<Steps; i++)
-//  { 
-//    del=800/i;
-//    varSpeed (del,r,i*.2,1);
-//  }
-//float dis = 72-Steps*(Steps+1)*.1;
-//    varSpeed (del,r,dis,1);
-
-//for (int i=Steps; i>0; i--)
-//  { 
-//    del=800/i;
-//    varSpeed (del,r,i*.2,1);
-//  }
-
-
-
-
-//sonar ();
-
 //alignLeft();
 //alignBack();
 
@@ -168,14 +207,59 @@ gridSearch();
 //alignLeft();
 //float angle1 = (dist_wall-wall)*micro_to_inches;
 //angle1 = atan(angle1/12)*180/3.1415926;
-//if (angle1 > 0) turn(angle1,0,800);
 //  else turn(-angle1,1,800); 
   
 //}
+
+delay(2000);
+powerTick(500);
+delay(2000);
+powerTick(2500);
+
+
 }
 
 void loop() 
 {
+//  if(newMeas){
+//    Serial.print("\n");
+//    Serial.print("Source:,");             //Which analog input source was that?
+//    Serial.print("mic"); 
+//    Serial.print(","); 
+//    for(int i=0;i<FFT_SIZE;i++)
+//    {
+//      Serial.print(magnitudes[i]);
+//      Serial.print(",");
+//    }  
+//      fft_bin = 0;
+//      newMeas = false;
+//}
+//Serial.print("thump");
+
+//for(int k = 0; k<(arrayIndex*5); k++)
+//{
+//  if(fiveData[k]>Threshold)
+//  {
+//    counter++;
+//  }
+//}
+//Serial.println(counter);
+////counter = 0;
+//delay(1000);
+
+//Serial.print("counter = ");
+
+
+//counter =  0;
+
+
+
+tickTracer();
+
+
+
+   ///////////EXAMPLE OUTPUT////////////////
+
 //Serial.print("Left Front = ");
 //Serial.println(sonarLF.ping_median(5));
 //
@@ -202,72 +286,6 @@ void loop()
 
 //checkEmAll();
 }
-
-void gridSearch()
-{
-matrix.clear();  
-ForwardBackward(12,1,period);
-y++;
-turn(90,1,period);
-ForwardBackward(12,1,period);
-x++;
-transCorrection(x);
-turn(90,0,period);
-transCorrection(y);
-rotateCorrection();
-markHere(x,y);
-while ((x < 5) || (y < 5))
-  {
-    if ( (x % 2) != 0 && y < 5)
-        {
-          ForwardBackward(12,1,period);
-          y++;
-          //check obstacle
-          //check tick tracer / dead end
-          //display result
-          markHere(x,y);
-        }
-    else if ( (x % 2) == 0 && y > 1)
-    {
-      ForwardBackward(12,0,period);
-      y--;
-          //check obstacle
-          //check tick tracer / dead end
-          //display result
-          markHere(x,y);
-    }
-    else if (y == 5 && x%2 != 0)
-      {
-        turn(90,1,period);
-        rotateCorrection();
-        transCorrection(x);     
-        ForwardBackward(12,1,period);
-        turn(90,0,period);
-        transCorrection(y);
-        x++;
-          //check obstacle
-          //check tick tracer / dead end
-          //display result
-          markHere(x,y);
-      }
-    else if (y == 1 && x%2==0)
-      {
-      turn(90,1,period);
-      rotateCorrection();
-      transCorrection(x);
-      ForwardBackward(12,1,period);
-      turn(90,0,period);
-      transCorrection(y);
-      x++;
-      //check obstacle
-      //check tick tracer / dead end
-      //display result
-      markHere(x,y);
-      }  
-   }
-}
-
-//&&&&&&&&&&&&&&&&& thumper and tick tracer &&&&&&&&&&&&&&&&&&&&&&&&&
 
 int thump(int number){
 
@@ -343,54 +361,180 @@ int tickTracer(){
     return decision;
 }
 
-void powerTick(){
-    delay(2000);
-    digitalWrite(51,HIGH);
-    delay(500);
-    digitalWrite(51,LOW);
-    delay(2000);
-    digitalWrite(51,HIGH);
-    delay(500);
+void powerTick(int TIMECOP){
+      digitalWrite(51,HIGH);
+    delay(TIMECOP);
     digitalWrite(51,LOW);
 }
+    
+void gridSearch()
+{
+matrix.clear();  
+ForwardBackward(12,1,period);
+y++;
+turn(90,1,period);
+ForwardBackward(12,1,period);
+x++;
+turn(90,0,period);
+checkEmAll();
+markHere(x,y);
+while ((x < 5) || (y < 5))
+  {
+    if ( (x % 2) != 0 && y < 5)
+        {
+          ForwardBackward(12,1,period);
+          y++;
+          //check obstacle
+          //check tick tracer / dead end
+          //display result
+          markHere(x,y);
+        }
+    else if ( (x % 2) == 0 && y > 1)
+    {
+      ForwardBackward(12,0,period);
+      y--;
 
-void rotateCorrection()
+                //check obstacle
+          //check tick tracer / dead end
+          //display result
+          markHere(x,y);
+    }
+    else if (y == 5 && x%2 != 0)
+      {
+        turn(90,1,period);
+        ForwardBackward(12,1,period);
+        turn(90,0,period);
+        checkEmAll();
+        x++;
+      
+          //check obstacle
+          //check tick tracer / dead end
+          //display result
+          markHere(x,y);
+      }
+    else if (y == 1 && x%2==0)
+      {
+      turn(90,1,period);
+      ForwardBackward(12,1,period);
+      turn(90,0,period);
+      checkEmAll();
+      x++;
+   
+      //check obstacle
+      //check tick tracer
+       // thump
+      //display result
+      markHere(x,y);
+      }  
+   }
+}
+
+void positionCalibration()
+{
+}
+
+void checkEmAll()
 {
   
-
+  int yTolerance = 40; //microseconds
   
   float angleFront;
+  float frontDistance;
   float angleLeft;
+  float leftDistance;
   float angleBack;
+  float backDistance;
   float angleRight;
+  float rightDistance;
 
   float minMag;
    
-
+//  Serial.print("front ");
+//  Serial.println(angleFront);
+//  Serial.print("left ");
+//  Serial.println(angleLeft);
+//  Serial.print("back ");
+//  Serial.println(angleBack);
+//  Serial.print("right ");
+//  Serial.println(angleRight);
+//  Serial.println("-------------------");
+//  Serial.print("FRONT ");
+//  Serial.println(frontDistance);
+//  Serial.print("LEFT ");
+//  Serial.println(leftDistance);
+//  Serial.print("BACK ");
+//  Serial.println(backDistance);
+//  Serial.print("RIGHT ");
+//  Serial.println(rightDistance);
+//  Serial.println("-------------------");
+//  if (angleFront == 100)
+//    angleFront = angleBack;
+//  if (angleBack == 100)
+//    angleBack = angleFront;
+//  if (angleRight == 100)
+//    angleRight = angleLeft;
+//  if (angleLeft == 100)
+//    angleLeft = angleRight;
+  
+//  minMag += angleFront;
+//  minMag += angleRight;
+//  minMag += angleLeft;
+//  minMag += angleBack;
+//  
+//  minMag /= 4;
+  
+//  if(angleFront != angleFront)
+//  {
+//    minMag = 45; 
+//  }
+//  else
+//  {
+//    minMag = abs(angleFront);
+//  }
+//  
+//  }
+//  else if ((abs(minMag) > abs(angleBack)) && !(angleBack != angleBack))
+//  {
+//    minMag = abs(angleBack);
+//  }
 
   if ( y < 3)
-  {  
+  {
+    angleBack = angleMeas(sonarBR, sonarBL, frontWidth);
+    backDistance = distanceXY;
+    Yoffset = (backDistance-Ycentered)-oneFoot*y;
     if ( x < 3)
     {
       angleLeft = angleMeas(sonarLB, sonarLF, sideWidth);
+      leftDistance = distanceXY;
+      Xoffset = (leftDistance-Xcentered)-oneFoot*x;
       minMag = (angleLeft+angleBack)/2; //quadrant 3
     }
     else       
     {
       angleRight = angleMeas(sonarRF, sonarRB, sideWidth);
+      rightDistance = distanceXY;
+      Xoffset = ((rightDistance-Xcentered)/(6-x))-oneFoot;
       minMag = (angleRight+angleBack)/2; //quadrant 4
     }
   }
   else 
-  { 
+  {
+    angleFront = angleMeas(sonarFL, sonarFR, frontWidth);
+    frontDistance = distanceXY;
+    Yoffset = ((frontDistance-Ycentered)/(6-y))-oneFoot;
     if (x < 3)
     {
       angleLeft = angleMeas(sonarLB, sonarLF, sideWidth);
+      leftDistance = distanceXY;
+      Xoffset = (leftDistance-Xcentered)-oneFoot*x;
       minMag = (angleLeft+angleFront)/2; //quadrant 2
     }
     else
     {
       angleRight = angleMeas(sonarRF, sonarRB, sideWidth);
+      rightDistance = distanceXY;
+      Xoffset = ((rightDistance-Xcentered)/(6-x))-oneFoot;
       minMag = (angleRight+angleFront)/2; //quadrant 1
     }
   }
@@ -403,37 +547,21 @@ void rotateCorrection()
   {
     turn(abs(minMag), 0, period);
   }
-}
 
-//****************** align to wall
-void transCorrection(int dimension)
-{
-
-  float backDistance;
-  float frontDistance;
-  if (dimension < 3)
-  {
-  angleMeas(sonarBR, sonarBL, frontWidth); 
-  backDistance = distanceXY; 
-  Yoffset = (backDistance-Ycentered)-oneFoot*(dimension);
-  }
-  else
-  {
-  angleMeas(sonarFL, sonarFR, frontWidth);
-  frontDistance = distanceXY;
-  Yoffset = (frontDistance-Ycentered)-oneFoot*(6-dimension);
-  }
-  
-   if (Yoffset > 0)
+  if (Yoffset > 30)
   {
     ForwardBackward(Yoffset*micro_to_inches,0,period);
   }
-  else
+  else if (Yoffset < -30)
   {
     ForwardBackward(abs(Yoffset*micro_to_inches),1,period);
   }
 
+
 }
+
+//****************** align to wall
+
 //**********************************************************Calculate angle
 // firts sensor is MOST COUNTERCLOCKWISE
 float angleMeas(NewPing sens1, NewPing sens2, float sensWidth)//sensWidth front  = 6.75, sensWidth sides = 7.0625
@@ -465,7 +593,6 @@ float angleMeas(NewPing sens1, NewPing sens2, float sensWidth)//sensWidth front 
   }
   return 100;
 }
-
 
 
 
@@ -615,3 +742,4 @@ void markHere(int i, int j){
   matrix.drawPixel(i,j, LED_RED);
   matrix.writeDisplay();
 }//end of marking the wire
+
