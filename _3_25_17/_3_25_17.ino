@@ -178,10 +178,10 @@ void setup()
     
 
 x = 0;
-y = 0;
+y = 5;
 
 matrix.setBrightness(10);
-matrix.drawPixel(x,y,YELLOW);
+matrix.drawPixel(x,y,BLUE);
 matrix.show();
 
 powerTick();
@@ -198,7 +198,7 @@ matrix.show();
 
 delay(5000);
 
-radialSearch();
+//radialSearch();
 //turn(360*2,1,period);
 
 
@@ -602,6 +602,11 @@ int thumpTick(){
     for (int i =0; i<arrayIndex;i++){ 
       value += analogRead(tickPin);
     }
+   //instead of serialprintln, print directly onto the board
+   
+   
+   
+   
     value /= arrayIndex;
     Serial.println(value);
     delay(100);
