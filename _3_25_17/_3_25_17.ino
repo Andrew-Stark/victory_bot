@@ -70,6 +70,8 @@ int period = 1000;
   long timerB;
   
   int32_t middle = 0;
+  
+  int buttonPin = 10;
 
 
 //********** sensor variables
@@ -159,6 +161,7 @@ void setup()
   DDRB = allOutputs;
   DDRK = allOutputs;
   
+  
   analogReference(INTERNAL2V56);
   
   for(int i=0;i<5;i++){
@@ -171,11 +174,13 @@ void setup()
   ADCSRA &= ~PS_128;
   ADCSRA |= PS_64;
   
+  pinMode(buttonPin, OUTPUT);
   pinMode(7,OUTPUT);
   pinMode(6,OUTPUT);
   ADCSRA &= ~PS_128;
   ADCSRA |= PS_64;
     
+   readStartButton();
 
 x = 0;
 y = 5;
@@ -264,6 +269,40 @@ void loop()
 //tickTracer();
 //thump();
 }
+
+void readStartButton(){
+    long time = 0;
+    int debounce_count = 12;
+    int counter = 0;
+    int reading;
+    int current_state = LOW;
+    boolean pinStateDecision = false;
+    while( !pinStateDecision ){
+      if(millis() != time)
+      {
+        reading = digitalRead(buttonPin);
+        
+        if(reading == current_state && counter > 0)
+        {
+          counter--;
+        }
+        if(reading != current_state)
+        {
+          counter++;
+        }
+        if(counter >= debounce_count)
+        {
+          counter = 0;
+          current_state = reading;
+          pinStateDecision = reading;
+        }
+        time = millis();
+      }
+    }
+}
+    
+  
+  
 
 void radialSearch()
 {
