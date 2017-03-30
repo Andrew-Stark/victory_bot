@@ -1,7 +1,10 @@
+#include <SPI.h>
 #include <gfxfont.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoMatrix.h>
 #include <Adafruit_NeoPixel.h>
+#include <LPD8806.h>
+
 
 #include <Wire.h>
 #include <NewPing.h>
@@ -137,7 +140,7 @@ int period = 1000;
     NEO_MATRIX_BOTTOM + NEO_MATRIX_RIGHT +
     NEO_MATRIX_COLUMNS + NEO_MATRIX_PROGRESSIVE,
     NEO_GRB + NEO_KHZ800);
-
+  LPD8806 strip = LPD8806(4,51,52);
 //************************************************* LED MATRIX  
 int x;
 int y;
@@ -157,9 +160,18 @@ void setup()
   Serial.begin(9600);
   byte allOutputs = B11111111;
   matrix.begin();
+  strip.begin();
+  strip.show();
   DDRL = allOutputs;
   DDRB = allOutputs;
   DDRK = allOutputs;
+  
+  for(int i=0;i<4;i++){
+    strip.setPixelColor(i,strip.Color(127,127,127));
+    delay(500);
+    strip.show();
+  }
+
   
   
   analogReference(INTERNAL2V56);
