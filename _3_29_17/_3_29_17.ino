@@ -77,7 +77,8 @@ int Xoffset;
 #define Max_Distance   200 
 #define arrayIndex 4000       //may have to either decrease or increase the number of sample data reading that we take
  
-  int tickThreshold = 600;
+  int tickThreshold = 900;
+  int lowTick = 100;
   int thresHold = 850;          //if analogRead is greater than this value then increase counter
   int lowThreshold = 150;
   
@@ -221,7 +222,7 @@ matrix.clear();
 matrix.setBrightness(10);
 matrix.drawPixel(0,0,YELLOW);
 matrix.show();
-gridSearch_with_strafe();
+//gridSearch_with_strafe();
 
 }
 
@@ -232,7 +233,7 @@ void loop()
 //  }
 //  transCorrection();
 //readStartButton();
-//thumpTick();
+thumpTick();
 }
 
 void readStartButton(){
@@ -618,6 +619,7 @@ boolean yVisited(){
 
 int thumpTick(){
     delay(100);
+    strafe(1,1,period);
     int decision;
     int counter = 0;
     int preCounter = 0;
@@ -668,16 +670,19 @@ int thumpTick(){
      delay(50);
     PORTB ^= 0x08; //back up
     //delay(24)
-  
+   strafe(1,0,period);
     counter = 0;
      //timerB = micros();
      delay(200);
+
+     //analogReference(INTERNAL2V56);
   
     int32_t value = 0;
     int32_t acceptable = 10;
     for (int i =0; i<arrayIndex;i++){ 
       value = analogRead(tickPin);
-      if(value > tickThreshold){
+      //Serial.println(value);
+      if(value > tickThreshold || value < lowTick){
         counter++;
       }
     }
@@ -686,16 +691,16 @@ int thumpTick(){
     delay(100);
     //Serial.println(abs(middle-counter));
     
-    if (abs(middle-counter) < acceptable)
+    if (counter > 700)
     {
-      //Serial.println("TICKwire");
+      Serial.println("TICKwire");
       decision = infrastructure;
-      //matrix.drawPixel(x,y,RED);
+      matrix.drawPixel(x,y,RED);
       matrix.show();
     }else{
-      //Serial.println("TICKnothing");
+      Serial.println("TICKnothing");
       decision = dead_end;
-      //matrix.drawPixel(x,y,BLUE);
+      matrix.drawPixel(x,y,BLUE);
       matrix.show();
     }
 
@@ -704,7 +709,7 @@ int thumpTick(){
      
 //     Serial.print("Counter: ");
 //     Serial.println(counter);
- 
+    analogReference(DEFAULT);
 
     
     return decision;
