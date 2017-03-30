@@ -874,11 +874,11 @@ void transCorrection()
   if (abs(Xoffset) > 18){
      if (Xoffset > 0)
     {
-      strafe(Xoffset*micro_to_inches,1,period);
+      strafe(Xoffset*micro_to_inches,0,period);
     }
     else
     {
-      strafe(abs(Xoffset*micro_to_inches),0,period);
+      strafe(abs(Xoffset*micro_to_inches),1,period);
     }
   }
 }

@@ -162,9 +162,9 @@ void setup()
   
   //analogReference(INTERNAL2V56);
   
-  for(int i=0;i<5;i++){
-  analogRead(i);
-  }
+//  for(int i=0;i<5;i++){
+//  analogRead(i);
+//  }
   
   PORTK = 0x00;
   PORTB = 0x00;
@@ -187,7 +187,7 @@ y = 0;
 //matrix.drawPixel(x,y,YELLOW);
 //matrix.show();
 //
-powerTick();
+//powerTick();
 
 
 //
@@ -205,71 +205,16 @@ powerTick();
 
 
 readStartButton();
+gridSearch_with_strafe();
 //radialSearch();
-//turn(360*2,1,period);
 
 
-//*****test section
-
-  
-//********************basic motion functions
-//ForwardBackward (12,0,period);  //ok, distance calibrated. 12 inches= 110 steps (distance in inches, 1 fwd, 0 bwd, delay)
-//strafe(12,1,50);            // (distance, right/left, delay
- //turn(180,1,100);
-//advanced motion
-//angleMotion (20,1,1,300);      // (distance, lerft/right , fw/bw/ , delay)
-//arcMotion(90,1,1,300);       // (radius, arc degrees, left/right, fw/bw, delay)
-//pivotMotion(90,1,1,300);    // (radius, arc degrees, left/right, fw/bw, delay)
-
-//variable speed functions
-//varSpeed (600,r,12,0); //calibrated 95%ish   (delay, speed ratio, distance, direction) (2.08 ratio/ 105 inches for almost perfect 12 in radius circle)
-
-//final variable speed plus acceleration. working ok
-
-//Steps = 1;
-//float del;
-//for (int i=1; i<Steps; i++)
-//  { 
-//    del=800/i;
-//    varSpeed (del,r,i*.2,1);
-//  }
-//float dis = 72-Steps*(Steps+1)*.1;
-//    varSpeed (del,r,dis,1);
-
-//for (int i=Steps; i>0; i--)
-//  { 
-//    del=800/i;
-//    varSpeed (del,r,i*.2,1);
-//  }
-
-
-
-
-//sonar ();
-
-//alignLeft();
-//alignBack();
-
-//float wall = dist_wall;
-
-//for (int i=0;i<6;i++)
-//{
-//varSpeed (800,.993,12,1);
-//alignLeft();
-//float angle1 = (dist_wall-wall)*micro_to_inches;
-//angle1 = atan(angle1/12)*180/3.1415926;
-//if (angle1 > 0) turn(angle1,0,800);
-//  else turn(-angle1,1,800); 
-  
-//}
 }
 
 void loop() 
 {
-//Serial.println(checkFrontClear());
-//Serial.println(checkLeftBlock());
-thumpTick();
-//thump();
+
+//readStartButton();
 }
 
 void readStartButton(){
@@ -279,11 +224,11 @@ void readStartButton(){
     int reading;
     int current_state = LOW;
     boolean pinStateDecision = false;
-    while( !pinStateDecision ){
+    while( pinStateDecision == false ){
       if(millis() != time)
       {
         reading = digitalRead(buttonPin);
-        
+        Serial.println(reading);
         if(reading == current_state && counter > 0)
         {
           counter--;
@@ -297,6 +242,7 @@ void readStartButton(){
           counter = 0;
           current_state = reading;
           pinStateDecision = reading;
+          Serial.println("button");
         }
         time = millis();
       }
@@ -313,7 +259,7 @@ void radialSearch()
     x++;
     matrix.drawPixel(x,y,0xffff);
     matrix.show();
-    transCorrection(x);
+    transCorrection();
     // if no obstacle in (1,1)
     if(checkLeftBlock()){
       board[x][y+1] = obstacle;
@@ -354,7 +300,7 @@ void radialSearch()
   x++;
   matrix.drawPixel(x,y,0xffff);
   matrix.show();
-  //transCorrection(x);
+  //transCorrection();
   rotateCorrection();
   turn(90,0,period);
   rotateCorrection();
@@ -363,7 +309,7 @@ void radialSearch()
     y++;
 //    matrix.drawPixel(x,y,0xffff);
 //    matrix.show();
-    transCorrection(y);
+    transCorrection();
     if(checkLeftBlock()){
       board[x-1][y] = obstacle;
     }
@@ -398,7 +344,7 @@ void radialSearch()
   y++;
   matrix.drawPixel(x,y,0xffff);
   matrix.show();
-  transCorrection(x);
+  transCorrection();
   rotateCorrection();
   turn(90,0,period);
   rotateCorrection();
@@ -408,7 +354,7 @@ void radialSearch()
     x--;
 //    matrix.drawPixel(x,y,0xffff);
 //    matrix.show();
-    transCorrection(6-x);
+    transCorrection();
     if(checkLeftBlock()){
       board[x][y-1] = obstacle;
     }
@@ -443,7 +389,7 @@ void radialSearch()
   x--;
   matrix.drawPixel(x,y,0xffff);
   matrix.show();
-  transCorrection(x);
+  transCorrection();
   rotateCorrection();
   turn(90,0,period);
   rotateCorrection();
@@ -452,7 +398,7 @@ void radialSearch()
     y--;
 //    matrix.drawPixel(x,y,0xffffff);
 //    matrix.show();
-    transCorrection(6-y);
+    transCorrection();
     if(checkLeftBlock()){
       board[x+1][y] = obstacle;
     }
@@ -486,24 +432,73 @@ void radialSearch()
   y--;
 //  matrix.drawPixel(x,y,0xffffff);
 //  matrix.show();
-  transCorrection(x);
+  transCorrection();
   rotateCorrection();
   turn(90,0,period);
   rotateCorrection();
 }
+
+void gridSearch_with_strafe()
+{
+x=0;
+y=0;
+matrix.clear();  
+strafe(12,1,period);
+x++;
+ForwardBackward(12,1,period);
+y++;            //we are in [1,1]
+transCorrection();
+
+board[x][y] = thumpTick();
+
+while ((x < 5) || (y < 5))
+  {
+    if ( (x % 2) != 0 && y < 5)
+        {
+          ForwardBackward(12,1,period);
+          y++;
+          if(y == 3){ rotateCorrection(); }
+          board[x][y] = thumpTick();
+        }
+    else if ( (x % 2) == 0 && y > 1)
+    {
+      ForwardBackward(12,0,period);
+      y--;
+      if(y == 3){ rotateCorrection(); }
+   
+          board[x][y] = thumpTick();
+    }
+    else if (y == 5 && x%2 != 0)
+      {
+       
         
+       //rotateCorrection();
+       strafe(12,1,period);
+      x++;
+       transCorrection();
+          board[x][y] = thumpTick();
+      }
+    else if (y == 1 && x%2==0)
+      {
+     strafe(12,1,period);
+     x++; 
+     transCorrection();
+     board[x][y] = thumpTick();
+      }  
+  }
+}        
 
 void gridSearch()
 {
 matrix.clear();  
 ForwardBackward(12,1,period);
 x++;
-transCorrection(x);
+transCorrection();
 turn(90,0,period);
 rotateCorrection();
 ForwardBackward(12,1,period);
 y++;
-transCorrection(y);
+transCorrection();
 
 
 board[x][y] = thumpTick();
@@ -535,16 +530,16 @@ while ((x < 5) || (y < 5))
     }
     else if (y == 5 && x%2 != 0)
       {
-        transCorrection(y);
+        transCorrection();
         turn(90,1,period);
         rotateCorrection();
-        transCorrection(x); 
-        //transCorrection(x);     
+        transCorrection(); 
+        //transCorrection();     
         ForwardBackward(12,1,period);
         x++;
         turn(90,0,period);
         rotateCorrection();
-        transCorrection(y);
+        transCorrection();
         
         board[x][y] = thumpTick();
           //check tick tracer / dead end
@@ -553,16 +548,16 @@ while ((x < 5) || (y < 5))
       }
     else if (y == 1 && x%2==0)
       {
-      transCorrection(y);
+      transCorrection();
       turn(90,1,period);
       rotateCorrection();
-      transCorrection(x);
-      //transCorrection(x); 
+      transCorrection();
+      //transCorrection(); 
       ForwardBackward(12,1,period);
       x++;
       turn(90,0,period);
       rotateCorrection();
-      transCorrection(y);
+      transCorrection();
       
       board[x][y] = thumpTick();
       //check tick tracer / dead end
@@ -777,30 +772,69 @@ void rotateCorrection()
 }
 
 //****************** align to wall
-void transCorrection(int dimension)
+void transCorrection()
 {
   float backDistance;
   float frontDistance;
-  if (dimension < 3)
+
+  float leftDistance;
+  float rightDistance;
+  if (y < 3)
   {
   angleMeas(sonarBR, sonarBL, frontWidth); 
   backDistance = distanceXY; 
-  Yoffset = (backDistance-Ycentered)-oneFoot*(dimension);
+  Yoffset = (backDistance-Ycentered)-oneFoot*(y);
+  Serial.println("y distance correction :");
+  Serial.println(Yoffset*micro_to_inches);
   }
   else
   {
   angleMeas(sonarFL, sonarFR, frontWidth);
   frontDistance = distanceXY;
-  Yoffset = -((frontDistance-Ycentered)-oneFoot*(6-dimension));
+  Yoffset = -((frontDistance-Ycentered)-oneFoot*(6-y));
+    Serial.println("y distance correction :");
+  Serial.println(Yoffset*micro_to_inches);
   }  
+ //********** new 
+  if (x < 3)
+  {
+  angleMeas(sonarLB, sonarLF, sideWidth); 
+  leftDistance = distanceXY; 
+  Xoffset = (leftDistance-Xcentered)-oneFoot*(x);
+    Serial.println("x distance correction :");
+  Serial.println(Xoffset*micro_to_inches);
+  }
+  else
+  {
+  angleMeas(sonarRB, sonarRF, sideWidth);
+  rightDistance = distanceXY;
+  Xoffset = -((rightDistance-Xcentered)-oneFoot*(6-x));
+    Serial.println("x distance correction :");
+  Serial.println(Xoffset*micro_to_inches);
+  }
+  
+  // y correction
+
+  
   if (abs(Yoffset) > 18){
      if (Yoffset > 0)
-    {
+    
       ForwardBackward(Yoffset*micro_to_inches,0,period);
+    
+    else
+        ForwardBackward(abs(Yoffset*micro_to_inches),1,period);
+    
+  }
+//x correction
+
+  if (abs(Xoffset) > 18){
+     if (Xoffset > 0)
+    {
+      strafe(Xoffset*micro_to_inches,0,period);
     }
     else
     {
-      ForwardBackward(abs(Yoffset*micro_to_inches),1,period);
+      strafe(abs(Xoffset*micro_to_inches),1,period);
     }
   }
 }
@@ -956,54 +990,6 @@ float angleMeas(NewPing sens1, NewPing sens2, float sensWidth)//sensWidth front 
   }
   return 0;
 }
-
-
-
-
-
-//*************************************************************45ANGLE Motion
-
-void angleMotion (float inches, int dirLR, int dirFB, int Delay)
-{
-  long distance;
-  inches *=steps_per_inch;
-  distance = inches;
-  
-  if (dirFB==1) //dirFB=1 means forward, 0 means backward
-    {
-      PORTL = FWD;
-      if (dirLR==1) //dirLR=1 means right, 0 means left
-         for (int i=0; i<distance; i++)
-          {
-             PORTL ^= motion45Right;
-             delayMicroseconds(Delay);
-          }
-      else
-        for (int i=0; i<distance; i++)
-           { 
-            PORTL ^= motion45Left;
-            delayMicroseconds(Delay);
-           }        
-    }
-  else
-    {
-      PORTL = REV;
-      if (dirLR==1) //dirLR=1 means right, 0 means left
-         for (int i=0; i<distance; i++)
-          {
-             PORTL ^= motion45Right;
-             delayMicroseconds(Delay);
-          }
-      else
-        for (int i=0; i<distance; i++)
-           { 
-           PORTL ^= motion45Left;
-            delayMicroseconds(Delay);
-           }    
-    }
-}
-
-
 //****************************************************************TURN
 
 void turn (int deg, int dir, int Delay)
@@ -1029,6 +1015,7 @@ void turn (int deg, int dir, int Delay)
             delayMicroseconds(Delay);
         }
     }
+    delay(50);
 }
 
 
@@ -1060,6 +1047,7 @@ void ForwardBackward (float inches, int dir, int Delay)
         delayMicroseconds (Delay);
       }
     }
+    delay(50);
 }
 //************************************************************STRAFE
 
@@ -1087,6 +1075,7 @@ void strafe(float inches, int dir, int Delay)
           delayMicroseconds(Delay);
         }
     }
+    delay(50);
 }
 
 //******************************************************** LED DISPLAYS
