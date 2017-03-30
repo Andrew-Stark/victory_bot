@@ -52,8 +52,9 @@ int period = 1000;
 #define Max_Distance   100 
 #define arrayIndex 4000       //may have to either decrease or increase the number of sample data reading that we take
  
-  int thresHold = 513;          //if analogRead is greater than this value then increase counter
+  int thresHold = 550;          //if analogRead is greater than this value then increase counter
   int tickThreshold = 600;
+  int lowThreshold = 462;
   
   int getData[arrayIndex] = {0};
   
@@ -159,7 +160,7 @@ void setup()
   DDRB = allOutputs;
   DDRK = allOutputs;
   
-  analogReference(INTERNAL2V56);
+  //analogReference(INTERNAL2V56);
   
   for(int i=0;i<5;i++){
   analogRead(i);
@@ -180,23 +181,23 @@ void setup()
 x = 0;
 y = 0;
 
-matrix.setBrightness(10);
-matrix.drawPixel(x,y,YELLOW);
-matrix.show();
-
-powerTick();
-
-for(int i=0;i<10;i++){
-  Serial.println(thumpTick());
-}
-tickCalibrate();
-Serial.print("baseline");
-Serial.println(middle);
-
-matrix.drawPixel(3,3,0x0000);
-matrix.show();
-
-delay(5000);
+//matrix.setBrightness(10);
+//matrix.drawPixel(x,y,YELLOW);
+//matrix.show();
+//
+//powerTick();
+//
+//for(int i=0;i<10;i++){
+//  Serial.println(thumpTick());
+//}
+//tickCalibrate();
+//Serial.print("baseline");
+//Serial.println(middle);
+//
+//matrix.drawPixel(3,3,0x0000);
+//matrix.show();
+//
+//delay(5000);
 
 //radialSearch();
 //turn(360*2,1,period);
@@ -563,17 +564,30 @@ boolean yVisited(){
 int thumpTick(){
     delay(100);
     int decision;
+    int counter = 0;
+    int preCounter = 0;
+    for (int i=0;i<arrayIndex;i++){
+      int value = analogRead(micPin);
+      if(value > thresHold || value < lowThreshold){
+       preCounter ++;
+      }
+    }
     PORTB ^= 0x08;
     delay(20);
-    int counter = 0;
+    
     //NEED TO ADD BASELINE MEASUREMENT
     for (int i =0; i<arrayIndex;i++){ 
       int value = analogRead(micPin);
-      if(value > thresHold){
+      //Serial.println(value);
+      if(value > thresHold || value < lowThreshold){
+      
           counter ++;
         }
     }
+    Serial.println(preCounter);
     Serial.println(counter);
+    Serial.println(counter - preCounter);
+    
       if(counter > 3910){
           Serial.println("solid");
           decision = dead_end;
