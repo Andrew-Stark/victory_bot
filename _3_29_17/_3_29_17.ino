@@ -1,4 +1,4 @@
- #include <gfxfont.h>
+#include <gfxfont.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoMatrix.h>
 #include <Adafruit_NeoPixel.h>
@@ -22,6 +22,18 @@
 #define GREEN 0x07E0
 #define WHITE 0xffff
 
+int matrixPin = 39;
+
+// side designations
+#define left 0
+#define back 1
+#define right 2
+#define front 3
+
+int leftOffset = 0;
+int backOffset = 0;
+int rightOffset = 0;
+int frontOffset = 0;
 
 byte FWD = B00100010;  //ok
 byte REV = B10001000; 
@@ -40,6 +52,8 @@ byte motionRightWheels = B00010001;// RIGHT WHEELS
 byte motionLeftWheels = B01000100;// LEFT WHEELS
 
 //%%%%%%%%%%%% CONVERSION FACTORS %%%%%%%%%%%%%%%%%%%%%%
+// ROBOT WIDTH = 9 5/8ths inch = 9.626
+
 int Steps;
 float steps_per_inch = 217.6;
 float steps_per_degree = 23.9;
@@ -51,19 +65,16 @@ float micro_to_inches = 0.006756;
 float pi = 3.14159265;
 float sideWidth = 7.0675/micro_to_inches;
 float frontWidth = 6.75/micro_to_inches;
-
-float distanceXY;
-
 float oneFoot = 12/micro_to_inches;
 float Ycentered = 0.75/micro_to_inches;
 float Xcentered = 1.25/micro_to_inches;
 
+float distanceXY;
 int Yoffset;
 int Xoffset;
-int yTolerance = 40; //microseconds
 
 
-#define Max_Distance   100 
+#define Max_Distance   200 
 #define arrayIndex 4000       //may have to either decrease or increase the number of sample data reading that we take
  
   int thresHold = 550;          //if analogRead is greater than this value then increase counter
@@ -130,7 +141,7 @@ int yTolerance = 40; //microseconds
   NewPing sonarRB(TRIGGER_SensorRF, ECHO_SensorRF,Max_Distance);
 
   
-  Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(8,8,52,
+  Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(8,8,matrixPin,
     NEO_MATRIX_BOTTOM + NEO_MATRIX_RIGHT +
     NEO_MATRIX_COLUMNS + NEO_MATRIX_PROGRESSIVE,
     NEO_GRB + NEO_KHZ800);
@@ -156,6 +167,7 @@ void setup()
   Serial.begin(9600);
   byte allOutputs = B11111111;
   matrix.begin();
+  matrix.clear();
   DDRL = allOutputs;
   DDRB = allOutputs;
   DDRK = allOutputs;
@@ -172,21 +184,24 @@ void setup()
   ADCSRA &= ~PS_128;
   ADCSRA |= PS_64;
 
-  pinMode(buttonPin, INPUT);
-  pinMode(7,OUTPUT);
-  pinMode(6,OUTPUT);
+  pinMode(buttonPin, INPUT_PULLUP);
   ADCSRA &= ~PS_128;
   ADCSRA |= PS_64;
 
-    
+  matrix.drawPixel(3,3,RED);
+  matrix.show();
+  delay(2000);
+  sensorsCalibrate();
+  matrix.drawPixel(3,3,GREEN);
+  matrix.show();
+  delay(2000);
 
-x = 0;
-y = 0;
+x = 5;
+y = 2;
 
-//matrix.setBrightness(10);
-//matrix.drawPixel(x,y,YELLOW);
-//matrix.show();
-//
+//home square
+
+
 //powerTick();
 
 
@@ -205,26 +220,29 @@ y = 0;
 
 
 readStartButton();
-gridSearch_with_strafe();
-//radialSearch();
-
+matrix.clear();
+matrix.setBrightness(10);
+matrix.drawPixel(x,y,YELLOW);
+matrix.show();
+//gridSearch_with_strafe();
 
 }
 
 void loop() 
 {
-
+transCorrection();
 //readStartButton();
 }
 
 void readStartButton(){
     long time = 0;
-    int debounce_count = 12;
+    int debounce_count = 3;
     int counter = 0;
     int reading;
-    int current_state = LOW;
+    int current_state = HIGH;
     boolean pinStateDecision = false;
     while( pinStateDecision == false ){
+      flashyShit();
       if(millis() != time)
       {
         reading = digitalRead(buttonPin);
@@ -243,6 +261,7 @@ void readStartButton(){
           current_state = reading;
           pinStateDecision = reading;
           Serial.println("button");
+          break;
         }
         time = millis();
       }
@@ -442,7 +461,7 @@ void gridSearch_with_strafe()
 {
 x=0;
 y=0;
-matrix.clear();  
+//matrix.clear();  
 strafe(12,1,period);
 x++;
 ForwardBackward(12,1,period);
@@ -471,8 +490,8 @@ while ((x < 5) || (y < 5))
     else if (y == 5 && x%2 != 0)
       {
        
-        
-       //rotateCorrection();
+       rotateCorrection();
+       transCorrection();
        strafe(12,1,period);
       x++;
        transCorrection();
@@ -480,6 +499,8 @@ while ((x < 5) || (y < 5))
       }
     else if (y == 1 && x%2==0)
       {
+     rotateCorrection();
+     transCorrection();
      strafe(12,1,period);
      x++; 
      transCorrection();
@@ -490,7 +511,7 @@ while ((x < 5) || (y < 5))
 
 void gridSearch()
 {
-matrix.clear();  
+//matrix.clear();  
 ForwardBackward(12,1,period);
 x++;
 transCorrection();
@@ -604,7 +625,7 @@ int thumpTick(){
        preCounter ++;
       }
     }
-    PORTB ^= 0x08;
+    PORTB ^= 0x08; //thump
     delay(20);
     
     //NEED TO ADD BASELINE MEASUREMENT
@@ -616,28 +637,28 @@ int thumpTick(){
           counter ++;
         }
     }
-    Serial.println(preCounter);
-    Serial.println(counter);
-    Serial.println(counter - preCounter);
-    
+//    Serial.println(preCounter);
+//    Serial.println(counter);
+//    Serial.println(counter - preCounter);
+   
       if(counter > 3910){
-          Serial.println("solid");
+         // Serial.println("solid");
           decision = dead_end;
           matrix.drawPixel(x,y,BLUE);
           matrix.show();
         }else if(counter > 3900){
-            Serial.println("hollow");
+            //Serial.println("hollow");
             matrix.drawPixel(x,y,0x0000);
             decision = foam;
           }else if(counter > 3860){
-             Serial.println("wire");
+             //Serial.println("wire");
              decision = infrastructure ;
              matrix.drawPixel(x,y,GREEN);
              matrix.show();
             }
 
      delay(50);
-    PORTB ^= 0x08; //Down
+    PORTB ^= 0x08; //back up
     //delay(24)
   
     counter = 0;
@@ -653,18 +674,18 @@ int thumpTick(){
       }
     }
     
-    Serial.println(counter);
+    //Serial.println(counter);
     delay(100);
-    Serial.println(abs(middle-counter));
+    //Serial.println(abs(middle-counter));
     
     if (abs(middle-counter) < acceptable)
     {
-      Serial.println("TICKwire");
+      //Serial.println("TICKwire");
       decision = infrastructure;
       matrix.drawPixel(x,y,RED);
       matrix.show();
     }else{
-      Serial.println("TICKnothing");
+      //Serial.println("TICKnothing");
       decision = dead_end;
       matrix.drawPixel(x,y,BLUE);
       matrix.show();
@@ -702,10 +723,6 @@ void tickCalibrate(){
 
 }
 
-float calibrateUltrasonics(){
-  // calibrate ultrasonics for offsets and for speed of sound
-  // returns speed of sound multiplier (float micro_to_inches)
-}
 
 
 void powerTick(){
@@ -735,12 +752,14 @@ void rotateCorrection()
   {  
     if ( x < 3)
     {
-      angleLeft = angleMeas(sonarLB, sonarLF, sideWidth);
+      angleLeft = angleMeas(left);
+      angleBack = angleMeas(back);
       minMag = (angleLeft+angleBack)/2; //quadrant 3
     }
     else       
     {
-      angleRight = angleMeas(sonarRF, sonarRB, sideWidth);
+      angleRight = angleMeas(right);
+      angleBack = angleMeas(back);
       minMag = (angleRight+angleBack)/2; //quadrant 4
     }
   }
@@ -748,12 +767,14 @@ void rotateCorrection()
   { 
     if (x < 3)
     {
-      angleLeft = angleMeas(sonarLB, sonarLF, sideWidth);
+      angleLeft = angleMeas(left);
+      angleFront = angleMeas(front);
       minMag = (angleLeft+angleFront)/2; //quadrant 2
     }
     else
     {
-      angleRight = angleMeas(sonarRF, sonarRB, sideWidth);
+      angleRight = angleMeas(right);
+      angleFront = angleMeas(front);
       minMag = (angleRight+angleFront)/2; //quadrant 1
     }
   }
@@ -781,36 +802,36 @@ void transCorrection()
   float rightDistance;
   if (y < 3)
   {
-  angleMeas(sonarBR, sonarBL, frontWidth); 
+  angleMeas(back); 
   backDistance = distanceXY; 
   Yoffset = (backDistance-Ycentered)-oneFoot*(y);
   Serial.println("y distance correction :");
-  Serial.println(Yoffset*micro_to_inches);
+  Serial.println(Yoffset);
   }
   else
   {
-  angleMeas(sonarFL, sonarFR, frontWidth);
+  angleMeas(front);
   frontDistance = distanceXY;
   Yoffset = -((frontDistance-Ycentered)-oneFoot*(6-y));
     Serial.println("y distance correction :");
-  Serial.println(Yoffset*micro_to_inches);
+  Serial.println(Yoffset);
   }  
  //********** new 
   if (x < 3)
   {
-  angleMeas(sonarLB, sonarLF, sideWidth); 
+  angleMeas(left); 
   leftDistance = distanceXY; 
   Xoffset = (leftDistance-Xcentered)-oneFoot*(x);
     Serial.println("x distance correction :");
-  Serial.println(Xoffset*micro_to_inches);
+  Serial.println(Xoffset);
   }
   else
   {
-  angleMeas(sonarRB, sonarRF, sideWidth);
+  angleMeas(right);
   rightDistance = distanceXY;
   Xoffset = -((rightDistance-Xcentered)-oneFoot*(6-x));
     Serial.println("x distance correction :");
-  Serial.println(Xoffset*micro_to_inches);
+  Serial.println(Xoffset);
   }
   
   // y correction
@@ -827,7 +848,7 @@ void transCorrection()
   }
 //x correction
 
-  if (abs(Xoffset) > 18){
+  if (abs(Xoffset) > 15){
      if (Xoffset > 0)
     {
       strafe(Xoffset*micro_to_inches,0,period);
@@ -843,7 +864,7 @@ void spokeCorrection(int count)
 {
   float backDistance;
 
-  angleMeas(sonarBR, sonarBL, frontWidth); 
+  angleMeas(back); 
   backDistance = distanceXY; 
   Yoffset = (backDistance-Ycentered)-oneFoot*(count);
 
@@ -952,24 +973,114 @@ boolean checkFrontClear(){
     return false;
   
 }
+void sensorsCalibrate(){
+  y=3;
+  x=3;
+  int N = 5;
+  float dist1 = 0;
+  float dist2 = 0;
+  float lateralDistance = 0;
+    for (int i=0;i<N;i++){
+       dist1 += sonarLB.ping_median(7);
+       dist2 += sonarLF.ping_median(7);
+    }
+    dist1 /= N;
+    dist2 /= N;
+
+    lateralDistance += dist1;
+
+    leftOffset = dist1 - dist2;
     
+    for (int i=0;i<N;i++){
+       dist1 += sonarRF.ping_median(7);
+       dist2 += sonarRB.ping_median(7);
+    }
+
+    dist1 /= N;
+    dist2 /= N;
+
+    lateralDistance += dist1;
+
+    rightOffset = dist1 - dist2;
+    
+    for (int i=0;i<N;i++){
+       dist1 += sonarBR.ping_median(7);
+       dist2 += sonarBL.ping_median(7);
+    }
+
+    dist1 /= N;
+    dist2 /= N;
+
+    backOffset = dist1 - dist2;    
+
+    for (int i=0;i<N;i++){
+       dist1 += sonarFL.ping_median(7);
+       dist2 += sonarRB.ping_median(7);
+    }
+
+    dist1 /= N;
+    dist2 /= N;
+
+    frontOffset = dist1 - dist2;
+
+    micro_to_inches = lateralDistance/(73.375);
+
+    sideWidth = 7.0675/micro_to_inches;
+    frontWidth = 6.75/micro_to_inches;
+    oneFoot = 12/micro_to_inches;
+    Ycentered = 0.75/micro_to_inches;
+    Xcentered = 1.25/micro_to_inches;
+   
+}
 //**********************************************************Calculate angle
 // firts sensor is MOST COUNTERCLOCKWISE
-float angleMeas(NewPing sens1, NewPing sens2, float sensWidth)//sensWidth front  = 6.75, sensWidth sides = 7.0625
+// new arguments: side
+float angleMeas(int side)//sensWidth front  = 6.75, sensWidth sides = 7.0625
 {
-  int N = 3;
+  float sensWidth;
+  int offset=0;
+    int N = 3;
   float dist1 = 0;
   float dist2 = 0;
   float angle;
   float opposite;
 
-  for (int i=0;i<N;i++){
-  dist1 += sens1.ping_median(5);
-  dist2 += sens2.ping_median(5);
+  if(side == left){
+    for (int i=0;i<N;i++){
+       dist1 = sonarLB.ping_median(7);
+       dist2 = sonarLF.ping_median(7);
+    }
+   offset = leftOffset;
+   sensWidth = sideWidth;
   }
-  
+  else if (side == back){
+    for (int i=0;i<N;i++){
+       dist1 = sonarBR.ping_median(7);
+       dist2 = sonarBL.ping_median(7);
+    }
+   offset = backOffset;
+   sensWidth = frontWidth;
+  }
+  else if (side == right){
+    for (int i=0;i<N;i++){
+       dist1 = sonarRF.ping_median(7);
+       dist2 = sonarRB.ping_median(7);
+    }
+   offset = rightOffset;
+   sensWidth = sideWidth;
+  }
+  else{
+    for (int i=0;i<N;i++){
+       dist1 = sonarFL.ping_median(7);
+       dist2 = sonarRB.ping_median(7);
+    }
+   offset = frontOffset;
+   sensWidth = frontWidth;
+  }
+ 
   dist1 /= N;
   dist2 /= N; 
+  dist2 += offset;
    
   distanceXY = (dist1+dist2)/2;
 
@@ -982,6 +1093,8 @@ float angleMeas(NewPing sens1, NewPing sens2, float sensWidth)//sensWidth front 
   Serial.println(distanceXY);
   
   opposite = (dist1-dist2);
+  Serial.print("opposite: ");
+  Serial.println(opposite);
   
   if (abs(opposite) < sensWidth)
   {
@@ -1079,4 +1192,29 @@ void strafe(float inches, int dir, int Delay)
 }
 
 //******************************************************** LED DISPLAYS
-
+void flashyShit(){
+  for(int i=0;i<8;i++){
+    for(int j=0;j<8;j++){
+      matrix.drawPixel(i,j, 0xFFFF);
+      matrix.show();
+    }
+  }
+  for(int j=7;j>=0;j--){
+    for(int i=7;i>=0;i--){
+      matrix.drawPixel(i,j, 0x0000);
+      matrix.show();
+    }
+  }
+  for(int i=0;i<8;i++){
+    for(int j=0;j<8;j++){
+      matrix.drawPixel(j,i, 0xFFFF);
+      matrix.show();
+    }
+  }
+  for(int j=7;j>=0;j--){
+    for(int i=7;i>=0;i--){
+      matrix.drawPixel(j,i, 0x0000);
+      matrix.show();
+    }
+  }
+}
