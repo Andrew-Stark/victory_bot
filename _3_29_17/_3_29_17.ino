@@ -487,7 +487,7 @@ while ((x < 5) || (y < 5))
       if(y == 3){ rotateCorrection(); }
        rotateCorrection();
        transCorrection();   
-          board[x][y] = thumpTick();
+       board[x][y] = thumpTick();
     }
     else if (y == 5 && x%2 != 0)
       {
@@ -638,6 +638,7 @@ int thumpTick(){
           counter ++;
         }
     }
+    //check lower and upper counters separately
     difference = counter-preCounter;
     Serial.print("pre-counter: ");
     Serial.println(preCounter);
@@ -646,7 +647,7 @@ int thumpTick(){
     Serial.print("difference: ");
     Serial.println(difference);
    
-      if(counter > 58){
+      if(counter > 50){
          Serial.println("wire");
           decision = infrastructure;
        
