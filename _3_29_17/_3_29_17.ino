@@ -77,9 +77,9 @@ int Xoffset;
 #define Max_Distance   200 
 #define arrayIndex 4000       //may have to either decrease or increase the number of sample data reading that we take
  
-  int thresHold = 550;          //if analogRead is greater than this value then increase counter
   int tickThreshold = 600;
-  int lowThreshold = 462;
+  int thresHold = 850;          //if analogRead is greater than this value then increase counter
+  int lowThreshold = 150;
   
   int getData[arrayIndex] = {0};
   
@@ -199,7 +199,7 @@ void setup()
 //home square
 
 
-//powerTick();
+powerTick();
 
 
 //
@@ -232,6 +232,7 @@ void loop()
 //  }
 //  transCorrection();
 //readStartButton();
+//thumpTick();
 }
 
 void readStartButton(){
@@ -484,7 +485,8 @@ while ((x < 5) || (y < 5))
       ForwardBackward(12,0,period);
       y--;
       if(y == 3){ rotateCorrection(); }
-   
+       rotateCorrection();
+       transCorrection();   
           board[x][y] = thumpTick();
     }
     else if (y == 5 && x%2 != 0)
@@ -619,6 +621,7 @@ int thumpTick(){
     int decision;
     int counter = 0;
     int preCounter = 0;
+    int difference = 0;
     for (int i=0;i<arrayIndex;i++){
       int value = analogRead(micPin);
       if(value > thresHold || value < lowThreshold){
@@ -627,8 +630,6 @@ int thumpTick(){
     }
     PORTB ^= 0x08; //thump
     delay(20);
-    
-    //NEED TO ADD BASELINE MEASUREMENT
     for (int i =0; i<arrayIndex;i++){ 
       int value = analogRead(micPin);
       //Serial.println(value);
@@ -637,23 +638,29 @@ int thumpTick(){
           counter ++;
         }
     }
-//    Serial.println(preCounter);
-//    Serial.println(counter);
-//    Serial.println(counter - preCounter);
+    difference = counter-preCounter;
+    Serial.print("pre-counter: ");
+    Serial.println(preCounter);
+    Serial.print("counter: ");
+    Serial.println(counter);
+    Serial.print("difference: ");
+    Serial.println(difference);
    
-      if(counter > 3910){
-         // Serial.println("solid");
-          decision = dead_end;
-          matrix.drawPixel(x,y,BLUE);
+      if(counter > 58){
+         Serial.println("wire");
+          decision = infrastructure;
+       
+          matrix.drawPixel(x,y,RED);
           matrix.show();
-        }else if(counter > 3900){
-            //Serial.println("hollow");
-            matrix.drawPixel(x,y,0x0000);
-            decision = foam;
-          }else if(counter > 3860){
-             //Serial.println("wire");
-             decision = infrastructure ;
-             matrix.drawPixel(x,y,GREEN);
+        }else if(counter > 40){
+            Serial.println("hollow");
+            decision = dead_end;
+    
+            matrix.drawPixel(x,y,BLUE);
+          }else if(counter > 25){
+             Serial.println("solid");
+             decision = foam ;
+             matrix.drawPixel(x,y,0x0000);
              matrix.show();
             }
 
@@ -673,8 +680,8 @@ int thumpTick(){
         counter++;
       }
     }
-    
-    //Serial.println(counter);
+    Serial.print("tick counter: ");
+    Serial.println(counter);
     delay(100);
     //Serial.println(abs(middle-counter));
     
@@ -682,12 +689,12 @@ int thumpTick(){
     {
       //Serial.println("TICKwire");
       decision = infrastructure;
-      matrix.drawPixel(x,y,RED);
+      //matrix.drawPixel(x,y,RED);
       matrix.show();
     }else{
       //Serial.println("TICKnothing");
       decision = dead_end;
-      matrix.drawPixel(x,y,BLUE);
+      //matrix.drawPixel(x,y,BLUE);
       matrix.show();
     }
 
