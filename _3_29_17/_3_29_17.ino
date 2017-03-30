@@ -1,4 +1,4 @@
-#include <gfxfont.h>
+ #include <gfxfont.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoMatrix.h>
 #include <Adafruit_NeoPixel.h>
@@ -27,8 +27,8 @@ byte FWD = B00100010;  //ok
 byte REV = B10001000; 
 byte rotRight = B00000000; //ok
 byte rotLeft = B10101010; //ok
-byte strRight = B00101000; //ok
-byte strLeft = B10000010; //ok
+byte strRight = B00001010; //ok
+byte strLeft = B10100000; //ok
 
 byte All = B10101010;
 // advanced motion variables
@@ -47,6 +47,20 @@ byte motion = B01010101;
 float dist_wall;
 int period = 1000;
 
+float micro_to_inches = 0.006756;
+float pi = 3.14159265;
+float sideWidth = 7.0675/micro_to_inches;
+float frontWidth = 6.75/micro_to_inches;
+
+float distanceXY;
+
+float oneFoot = 12/micro_to_inches;
+float Ycentered = 0.75/micro_to_inches;
+float Xcentered = 1.25/micro_to_inches;
+
+int Yoffset;
+int Xoffset;
+int yTolerance = 40; //microseconds
 
 
 #define Max_Distance   100 
@@ -115,22 +129,6 @@ int period = 1000;
   NewPing sonarRF(TRIGGER_SensorRB, ECHO_SensorRB,Max_Distance);
   NewPing sonarRB(TRIGGER_SensorRF, ECHO_SensorRF,Max_Distance);
 
-  float micro_to_inches = 0.006756;
-  float pi = 3.14159265;
-  float sideWidth = 7.0675/micro_to_inches;
-  float frontWidth = 6.75/micro_to_inches;
-  
-  float distanceXY;
-  
-  float distanceToMove;
-  
-  float oneFoot = 12/micro_to_inches;
-  float Ycentered = 0.75/micro_to_inches;
-  float Xcentered = 1.25/micro_to_inches;
-  
-  int Yoffset;
-  int Xoffset;
-  int yTolerance = 40; //microseconds
   
   Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(8,8,52,
     NEO_MATRIX_BOTTOM + NEO_MATRIX_RIGHT +
@@ -147,7 +145,9 @@ int board[7][7]= {{0,0,0,0,0,0,0},
                   {0,0,0,0,0,0,0},
                   {0,0,0,0,0,0,0},
                   {0,0,0,0,0,0,0}};
-                  
+
+// ********************* button ********************
+int buttonPin = 53;                  
   
 
 //**************************************************SETUP
@@ -171,11 +171,13 @@ void setup()
   
   ADCSRA &= ~PS_128;
   ADCSRA |= PS_64;
-  
+
+  pinMode(buttonPin, INPUT);
   pinMode(7,OUTPUT);
   pinMode(6,OUTPUT);
   ADCSRA &= ~PS_128;
   ADCSRA |= PS_64;
+
     
 
 x = 0;
@@ -186,6 +188,8 @@ y = 0;
 //matrix.show();
 //
 powerTick();
+
+
 //
 //for(int i=0;i<10;i++){
 //  Serial.println(thumpTick());
@@ -199,6 +203,8 @@ powerTick();
 //
 //delay(5000);
 
+
+readStartButton();
 //radialSearch();
 //turn(360*2,1,period);
 
@@ -264,6 +270,37 @@ void loop()
 //Serial.println(checkLeftBlock());
 thumpTick();
 //thump();
+}
+
+void readStartButton(){
+    long time = 0;
+    int debounce_count = 12;
+    int counter = 0;
+    int reading;
+    int current_state = LOW;
+    boolean pinStateDecision = false;
+    while( !pinStateDecision ){
+      if(millis() != time)
+      {
+        reading = digitalRead(buttonPin);
+        
+        if(reading == current_state && counter > 0)
+        {
+          counter--;
+        }
+        if(reading != current_state)
+        {
+          counter++;
+        }
+        if(counter >= debounce_count)
+        {
+          counter = 0;
+          current_state = reading;
+          pinStateDecision = reading;
+        }
+        time = millis();
+      }
+    }
 }
 
 void radialSearch()
@@ -668,6 +705,11 @@ void tickCalibrate(){
 
      delay(200);
 
+}
+
+float calibrateUltrasonics(){
+  // calibrate ultrasonics for offsets and for speed of sound
+  // returns speed of sound multiplier (float micro_to_inches)
 }
 
 
