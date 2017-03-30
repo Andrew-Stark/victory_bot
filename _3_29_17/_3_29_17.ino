@@ -185,7 +185,7 @@ y = 0;
 //matrix.drawPixel(x,y,YELLOW);
 //matrix.show();
 //
-//powerTick();
+powerTick();
 //
 //for(int i=0;i<10;i++){
 //  Serial.println(thumpTick());
@@ -625,7 +625,7 @@ int thumpTick(){
     delay(100);
     Serial.println(abs(middle-counter));
     
-    if (abs(middle-value) < acceptable)
+    if (abs(middle-counter) < acceptable)
     {
       Serial.println("TICKwire");
       decision = infrastructure;
@@ -655,7 +655,7 @@ void tickCalibrate(){
     matrix.show();
   
     int32_t value = 0;
-    
+    int counter = 0;
     for (int i =0; i<arrayIndex;i++){ 
        value = analogRead(tickPin);
       if(value > tickThreshold){
