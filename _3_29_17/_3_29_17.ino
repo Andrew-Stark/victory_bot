@@ -77,8 +77,8 @@ int Xoffset;
 #define Max_Distance   200 
 #define arrayIndex 4000       //may have to either decrease or increase the number of sample data reading that we take
  
-  int tickThreshold = 900;
-  int lowTick = 100;
+  int tickThreshold = 412;
+  int lowTick = 390;
   int thresHold = 850;          //if analogRead is greater than this value then increase counter
   int lowThreshold = 150;
   
@@ -165,7 +165,7 @@ int buttonPin = 53;
 //**************************************************SETUP
 void setup() 
 {
-  Serial.begin(9600);
+ 
   byte allOutputs = B11111111;
   matrix.begin();
   matrix.clear();
@@ -222,8 +222,16 @@ matrix.clear();
 matrix.setBrightness(10);
 matrix.drawPixel(0,0,YELLOW);
 matrix.show();
-//gridSearch_with_strafe();
-
+gridSearch_with_strafe();
+readStartButton();
+Serial.begin(9600);
+for(int i=0; i<7; i++){
+  
+  for(int j=0; j<7; j++){
+    Serial.print(" ");Serial.print(board[j][i]);Serial.print(" ");
+  }
+Serial.print("\n");
+}
 }
 
 void loop() 
@@ -233,7 +241,7 @@ void loop()
 //  }
 //  transCorrection();
 //readStartButton();
-thumpTick();
+//thumpTick();
 }
 
 void readStartButton(){
@@ -248,7 +256,7 @@ void readStartButton(){
       if(millis() != time)
       {
         reading = digitalRead(buttonPin);
-        Serial.println(reading);
+        //Serial.println(reading);
         if(reading == current_state && counter > 0)
         {
           counter--;
@@ -262,7 +270,7 @@ void readStartButton(){
           counter = 0;
           current_state = reading;
           pinStateDecision = reading;
-          Serial.println("button");
+          //Serial.println("button");
           break;
         }
         time = millis();
@@ -618,9 +626,9 @@ boolean yVisited(){
 //&&&&&&&&&&&&&&&&& thumper and tick tracer &&&&&&&&&&&&&&&&&&&&&&&&&
 
 int thumpTick(){
-    delay(100);
     strafe(1,1,period);
-    int decision;
+    delay(100);
+        int decision;
     int counter = 0;
     int preCounter = 0;
     int difference = 0;
@@ -642,26 +650,26 @@ int thumpTick(){
     }
     //check lower and upper counters separately
     difference = counter-preCounter;
-    Serial.print("pre-counter: ");
-    Serial.println(preCounter);
-    Serial.print("counter: ");
-    Serial.println(counter);
-    Serial.print("difference: ");
-    Serial.println(difference);
+    //Serial.print("pre-counter: ");
+    //Serial.println(preCounter);
+    //Serial.print("counter: ");
+    //Serial.println(counter);
+    //Serial.print("difference: ");
+    //Serial.println(difference);
    
-      if(counter > 50){
-         Serial.println("wire");
+      if(counter > 60){
+         //Serial.println("wire");
           decision = infrastructure;
-       
           matrix.drawPixel(x,y,RED);
           matrix.show();
         }else if(counter > 40){
-            Serial.println("hollow");
+            //Serial.println("hollow");
             decision = dead_end;
     
             matrix.drawPixel(x,y,BLUE);
+            matrix.show();
           }else if(counter > 25){
-             Serial.println("solid");
+             //Serial.println("solid");
              decision = foam ;
              matrix.drawPixel(x,y,0x0000);
              matrix.show();
@@ -677,42 +685,47 @@ int thumpTick(){
 
      //analogReference(INTERNAL2V56);
   
-    int32_t value = 0;
-    int32_t acceptable = 10;
+    int16_t value = 0;
+    int16_t acceptable = 10;
+//    for (int j = 1023; j >=0; j-=10){
+//      tickThreshold=j;
+//      counter=0;
+//      Serial.print("thresh: ");
+//      Serial.println(tickThreshold);
     for (int i =0; i<arrayIndex;i++){ 
       value = analogRead(tickPin);
       //Serial.println(value);
-      if(value > tickThreshold || value < lowTick){
+      if(value > 512){
         counter++;
       }
     }
-    Serial.print("tick counter: ");
-    Serial.println(counter);
+    board[x][y] = counter;
+//    Serial.print("tick counter: ");
+//    Serial.println(counter);
     delay(100);
     //Serial.println(abs(middle-counter));
     
-    if (counter > 700)
-    {
-      Serial.println("TICKwire");
-      decision = infrastructure;
-      matrix.drawPixel(x,y,RED);
-      matrix.show();
-    }else{
-      Serial.println("TICKnothing");
-      decision = dead_end;
-      matrix.drawPixel(x,y,BLUE);
-      matrix.show();
-    }
+//    if (counter > 1000)
+//    {
+//      Serial.println("TICKwire");
+//      decision = infrastructure;
+//      matrix.drawPixel(x,y,WHITE);
+//      matrix.show();
+//    }else{
+//      Serial.println("TICKnothing");
+//
+//    }
+    
 
 
      delay(200);
      
 //     Serial.print("Counter: ");
 //     Serial.println(counter);
-    analogReference(DEFAULT);
+    //analogReference(DEFAULT);
 
     
-    return decision;
+    //return decision;
 }
 
 void tickCalibrate(){
@@ -818,16 +831,16 @@ void transCorrection()
   angleMeas(back); 
   backDistance = distanceXY; 
   Yoffset = (backDistance-Ycentered)-oneFoot*(y);
-  Serial.println("y distance correction :");
-  Serial.println(Yoffset);
+  //Serial.println("y distance correction :");
+  //Serial.println(Yoffset);
   }
   else
   {
   angleMeas(front);
   frontDistance = distanceXY;
   Yoffset = -((frontDistance-Ycentered)-oneFoot*(6-y));
-  Serial.println("y distance correction :");
-  Serial.println(Yoffset);
+  //Serial.println("y distance correction :");
+  //Serial.println(Yoffset);
   }  
  //********** new 
   if (x < 3)
@@ -835,16 +848,16 @@ void transCorrection()
   angleMeas(left); 
   leftDistance = distanceXY; 
   Xoffset = (leftDistance-Xcentered)-oneFoot*(x);
-  Serial.println("x distance correction :");
-  Serial.println(Xoffset);
+  //Serial.println("x distance correction :");
+  //Serial.println(Xoffset);
   }
   else
   {
   angleMeas(right);
   rightDistance = distanceXY;
   Xoffset = -((rightDistance-Xcentered)-oneFoot*(6-x));
-  Serial.println("x distance correction :");
-  Serial.println(Xoffset);
+  //Serial.println("x distance correction :");
+  //Serial.println(Xoffset);
   }
   
   // y correction
@@ -926,12 +939,12 @@ boolean checkLeftBlock(){
       distanceXY = (int)max(dist1,dist2);
     
       
-      Serial.print("left: ");
-      Serial.println(dist1);
-      Serial.print("right: ");
-      Serial.println(dist2);
-      Serial.print("avg: ");
-      Serial.println(distanceXY);
+      //Serial.print("left: ");
+      //Serial.println(dist1);
+      //Serial.print("right: ");
+      //Serial.println(dist2);
+      //Serial.print("avg: ");
+      //Serial.println(distanceXY);
      
     
   if(distanceXY > pingMax || distanceXY == -1 || distanceXY == 0){
@@ -954,7 +967,7 @@ boolean checkFrontClear(){
      }
      
      value /= (float)N;
-     Serial.println(value);
+     //Serial.println(value);
      
       N = 3;
       float dist1 = 0;
@@ -970,12 +983,12 @@ boolean checkFrontClear(){
        
       distanceXY = (int)max(dist1,dist2);
     
-      Serial.print("left: ");
-      Serial.println(dist1);
-      Serial.print("right: ");
-      Serial.println(dist2);
-      Serial.print("avg: ");
-      Serial.println(distanceXY);
+      //Serial.print("left: ");
+      //Serial.println(dist1);
+      //Serial.print("right: ");
+      //Serial.println(dist2);
+      //Serial.print("avg: ");
+      //Serial.println(distanceXY);
   
   
     
@@ -989,7 +1002,7 @@ boolean checkFrontClear(){
 void sensorsCalibrate(){
   y=3;
   x=3;
-  Serial.println(micro_to_inches,8);
+  //Serial.println(micro_to_inches,8);
   int N = 1;
   float dist1 = 0;
   float dist2 = 0;
@@ -1004,8 +1017,8 @@ void sensorsCalibrate(){
     lateralDistance += dist1;
 
     leftOffset = dist1 - dist2;
-    Serial.print("left offset: ");
-    Serial.println(leftOffset);
+    //Serial.print("left offset: ");
+    //Serial.println(leftOffset);
     dist1 = 0;
     dist2 = 0;    
     for (int i=0;i<N;i++){
@@ -1019,8 +1032,8 @@ void sensorsCalibrate(){
     lateralDistance += dist1;
 
     rightOffset = dist1 - dist2;
-    Serial.print("right offset: ");
-    Serial.println(rightOffset);
+    //Serial.print("right offset: ");
+    //Serial.println(rightOffset);
     dist1 = 0;
     dist2 = 0;    
     for (int i=0;i<N;i++){
@@ -1032,8 +1045,8 @@ void sensorsCalibrate(){
     dist2 /= N;
 
     backOffset = dist1 - dist2; 
-    Serial.print("back offset: ");
-    Serial.println(backOffset);   
+    //Serial.print("back offset: ");
+    //Serial.println(backOffset);   
     dist1 = 0;
     dist2 = 0;
     
@@ -1046,16 +1059,16 @@ void sensorsCalibrate(){
     dist2 /= N;
 
     frontOffset = dist1 - dist2;
-    Serial.print("front offset: ");
-    Serial.println(frontOffset);
+    //Serial.print("front offset: ");
+    //Serial.println(frontOffset);
      
     dist1 = 0;
     dist2 = 0;
     
     micro_to_inches = (73.375f)/lateralDistance;
     
-    Serial.print("micro to inches: ");
-    Serial.println(micro_to_inches, 8);
+    //Serial.print("micro to inches: ");
+    //Serial.println(micro_to_inches, 8);
 
     sideWidth = 7.0675/micro_to_inches;
     frontWidth = 6.75/micro_to_inches;
@@ -1117,22 +1130,22 @@ float angleMeas(int side)//sensWidth front  = 6.75, sensWidth sides = 7.0625
   distanceXY = (dist1+dist2)/2;
 
   
-  Serial.print("left: ");
-  Serial.println(dist1);
-  Serial.print("right: ");
-  Serial.println(dist2);
-  Serial.print("avg: ");
-  Serial.println(distanceXY);
+  //Serial.print("left: ");
+  //Serial.println(dist1);
+  //Serial.print("right: ");
+  //Serial.println(dist2);
+  //Serial.print("avg: ");
+  //Serial.println(distanceXY);
   
   opposite = (dist1-dist2);
-  Serial.print("opposite: ");
-  Serial.println(opposite);
+  //Serial.print("opposite: ");
+  //Serial.println(opposite);
   
   if (abs(opposite) < sensWidth)
   {
     angle = asin(opposite/sensWidth)*(180/pi);
-    Serial.print("angle: ");
-    Serial.println(angle);
+    //Serial.print("angle: ");
+    //Serial.println(angle);
     return angle;
   }
   return 0;
